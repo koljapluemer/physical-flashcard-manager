@@ -1,4 +1,5 @@
 import cardContentCss from '../styles/cardContent.css?raw';
+import { renderMathHtml } from '../utils/math';
 import type { Collection, Flashcard } from '../types';
 
 interface RenderRequest {
@@ -9,10 +10,11 @@ interface RenderRequest {
 
 function buildCardPageHtml(card: Flashcard, side: 'front' | 'back'): string {
   const content = side === 'front' ? card.front : card.back;
+  const renderedContent = renderMathHtml(content);
 
   return `
     <div class="flashcard-preview-content">
-      ${content}
+      ${renderedContent}
     </div>
   `;
 }
