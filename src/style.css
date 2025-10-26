@@ -95,17 +95,52 @@ a {
   padding-left: 1.5rem;
 }
 
-.math-inline {
-  padding: 0.1rem 0.25rem;
+.tiptap-mathematics-render {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.35rem;
   border-radius: 4px;
   background: rgba(50, 115, 220, 0.08);
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.math-block {
+.tiptap-mathematics-render--editable:hover {
+  background: rgba(50, 115, 220, 0.18);
+}
+
+.tiptap-mathematics-render[data-type='block-math'] {
+  display: block;
   margin: 1rem 0;
-  padding: 1rem;
-  border-left: 3px solid #3273dc;
-  background: rgba(50, 115, 220, 0.05);
+}
+
+.tiptap-mathematics-render .katex {
+  font-size: 1.05em;
+}
+
+.math-modal .modal-card-head,
+.math-modal .modal-card-foot {
+  background: #fff;
+}
+
+.math-modal .textarea {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: #fff;
+  color: #363636;
+  border-color: #dbdbdb;
+}
+
+.math-modal-preview {
+  border: 1px solid #dbdbdb;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: #f9fafb;
+  min-height: 70px;
+}
+
+.math-modal-preview .katex-display {
+  margin: 0;
 }
 
 .print-note {

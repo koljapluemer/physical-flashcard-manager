@@ -1,3 +1,4 @@
+import cardContentCss from '../styles/cardContent.css?raw';
 import type { Collection, Flashcard } from '../types';
 
 interface RenderRequest {
@@ -17,81 +18,21 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back'): string {
 }
 
 function buildHeadHtml(): string {
-  // Exact CSS from cardPreview.css
-  const cardPreviewStyles = `
-.flashcard-preview-content {
-  padding: 1rem;
-  overflow: hidden;
-  font-family: "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #222;
-}
-
-.flashcard-preview-content p {
-  margin: 0 0 0.75em 0;
-}
-
-.flashcard-preview-content p:last-child {
-  margin-bottom: 0;
-}
-
-.flashcard-preview-content h1,
-.flashcard-preview-content h2,
-.flashcard-preview-content h3,
-.flashcard-preview-content h4 {
-  margin: 0 0 0.5em 0;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.flashcard-preview-content h1 { font-size: 1.75em; }
-.flashcard-preview-content h2 { font-size: 1.5em; }
-.flashcard-preview-content h3 { font-size: 1.25em; }
-.flashcard-preview-content h4 { font-size: 1.1em; }
-
-.flashcard-preview-content ul,
-.flashcard-preview-content ol {
-  margin: 0 0 0.75em 0;
-  padding-left: 1.5em;
-}
-
-.flashcard-preview-content li {
-  margin-bottom: 0.25em;
-}
-
-.flashcard-preview-content strong {
-  font-weight: 600;
-}
-
-.flashcard-preview-content em {
-  font-style: italic;
-}
-
-.flashcard-preview-content img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0.5em 0;
-}
-
-.flashcard-preview-content .math-inline {
-  font-size: 1.05em;
-}
-
-.flashcard-preview-content .math-block {
-  display: block;
-  margin: 1em 0;
-  text-align: center;
-}
-`;
-
   return `
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-      body { margin: 0; padding: 0; }
-      ${cardPreviewStyles}
+      :root {
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #fff;
+      }
+
+${cardContentCss}
     </style>
   `;
 }
@@ -102,10 +43,10 @@ export async function exportCollectionToPdf(
   cardWidthMm: number,
   cardHeightMm: number
 ): Promise<Blob> {
-  const renderApiUrl = import.meta.env.VITE_RENDER_API_URL;
+  const renderApiUrl = import.meta.env.VITE_BACKEND_RENDER_URL;
 
   if (!renderApiUrl) {
-    throw new Error('VITE_RENDER_API_URL is not configured');
+    throw new Error('VITE_BACKEND_RENDER_URL is not configured');
   }
 
   // Build pages array: 2 pages per card (front, then back)
