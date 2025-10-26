@@ -3,6 +3,9 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
+import * as renderApi from '../api/render';
+import { downloadPdfBlob, generatePdfFilename } from '../utils/pdfExport';
+import { useSettingsStore } from '../stores/settings';
 import type { Collection, Flashcard } from '../types';
 
 const props = defineProps<{
@@ -10,11 +13,13 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const settingsStore = useSettingsStore();
 
 const collection = ref<Collection | null>(null);
 const cards = ref<Flashcard[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const exportingPdf = ref(false);
 
 async function loadData() {
   loading.value = true;
@@ -64,6 +69,29 @@ async function deleteCard(cardId: number) {
     }
   }
 }
+
+async function exportPdf() {
+  if (!collection.value || cards.value.length === 0) {
+    return;
+  }
+
+  exportingPdf.value = true;
+
+  try {
+    const blob = await renderApi.exportCollectionToPdf(
+      collection.value,
+      cards.value,
+      settingsStore.cardWidthMm,
+      settingsStore.cardHeightMm
+    );
+    const filename = generatePdfFilename(collection.value.title);
+    downloadPdfBlob(blob, filename);
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Failed to export PDF');
+  } finally {
+    exportingPdf.value = false;
+  }
+}
 </script>
 
 <template>
@@ -80,6 +108,15 @@ async function deleteCard(cardId: number) {
         <div class="buttons">
           <button class="button is-primary" type="button" @click="createCard">
             New Flashcard
+          </button>
+          <button
+            class="button is-link"
+            type="button"
+            @click="exportPdf"
+            :disabled="cards.length === 0 || exportingPdf"
+            :class="{ 'is-loading': exportingPdf }"
+          >
+            Export PDF
           </button>
         </div>
       </div>

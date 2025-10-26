@@ -8,6 +8,7 @@ import type { Level } from '@tiptap/extension-heading';
 import { NodeSelection } from 'prosemirror-state';
 import { MathBlock, MathInline } from '../editor/extensions/math';
 import { resizeImageToDataUrl } from '../utils/image';
+import CardPreview from '../components/CardPreview.vue';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard } from '../types';
@@ -22,8 +23,8 @@ const router = useRouter();
 const collection = ref<Collection | null>(null);
 const card = ref<Flashcard | null>(null);
 const saveLoading = ref(false);
-const showFrontPreview = ref(false);
-const showBackPreview = ref(false);
+const frontHtml = ref('');
+const backHtml = ref('');
 const headingLevel: Level = 3;
 
 const isNew = computed(() => props.cardId === 'new');
@@ -77,6 +78,9 @@ const frontEditor = useEditor({
     handlePaste: (_view, event) => handleImageEvent(event, frontEditor.value),
     handleDrop: (_view, event) => handleImageEvent(event, frontEditor.value),
   },
+  onUpdate: ({ editor }) => {
+    frontHtml.value = editor.getHTML();
+  },
 });
 
 const backEditor = useEditor({
@@ -85,6 +89,9 @@ const backEditor = useEditor({
   editorProps: {
     handlePaste: (_view, event) => handleImageEvent(event, backEditor.value),
     handleDrop: (_view, event) => handleImageEvent(event, backEditor.value),
+  },
+  onUpdate: ({ editor }) => {
+    backHtml.value = editor.getHTML();
   },
 });
 
@@ -98,12 +105,23 @@ async function loadData() {
       const cardIdNum = parseInt(props.cardId, 10);
       card.value = await flashcardsApi.getFlashcard(cardIdNum);
 
-      frontEditor.value?.commands.setContent(card.value.front || '', { emitUpdate: false });
-      backEditor.value?.commands.setContent(card.value.back || '', { emitUpdate: false });
+      const frontContent = card.value.front || '<p></p>';
+      const backContent = card.value.back || '<p></p>';
+
+      frontEditor.value?.commands.setContent(frontContent, { emitUpdate: false });
+      backEditor.value?.commands.setContent(backContent, { emitUpdate: false });
+
+      frontHtml.value = frontContent;
+      backHtml.value = backContent;
     } else {
       card.value = null;
-      frontEditor.value?.commands.setContent('<p></p>', { emitUpdate: false });
-      backEditor.value?.commands.setContent('<p></p>', { emitUpdate: false });
+      const emptyContent = '<p></p>';
+
+      frontEditor.value?.commands.setContent(emptyContent, { emitUpdate: false });
+      backEditor.value?.commands.setContent(emptyContent, { emitUpdate: false });
+
+      frontHtml.value = emptyContent;
+      backHtml.value = emptyContent;
     }
   } catch (err) {
     console.error('Failed to load data', err);
@@ -267,15 +285,12 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
               Image
               <input type="file" class="is-hidden" accept="image/*" @change="insertImageFromPicker(frontEditor, $event)" />
             </label>
-            <button type="button" @click="showFrontPreview = !showFrontPreview">
-              {{ showFrontPreview ? 'Hide' : 'Preview' }}
-            </button>
           </div>
           <EditorContent v-if="frontEditor" :editor="frontEditor" />
         </div>
-        <div v-if="showFrontPreview" class="box">
-          <h3 class="title is-6">Front Preview</h3>
-          <div v-html="frontEditor?.getHTML()"></div>
+        <div class="mt-4">
+          <h3 class="title is-6">Preview</h3>
+          <CardPreview :html="frontHtml" side="front" />
         </div>
       </div>
 
@@ -316,15 +331,12 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
               Image
               <input type="file" class="is-hidden" accept="image/*" @change="insertImageFromPicker(backEditor, $event)" />
             </label>
-            <button type="button" @click="showBackPreview = !showBackPreview">
-              {{ showBackPreview ? 'Hide' : 'Preview' }}
-            </button>
           </div>
           <EditorContent v-if="backEditor" :editor="backEditor" />
         </div>
-        <div v-if="showBackPreview" class="box">
-          <h3 class="title is-6">Back Preview</h3>
-          <div v-html="backEditor?.getHTML()"></div>
+        <div class="mt-4">
+          <h3 class="title is-6">Preview</h3>
+          <CardPreview :html="backHtml" side="back" />
         </div>
       </div>
     </div>

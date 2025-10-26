@@ -34,6 +34,14 @@ function handleLogout() {
           >
             Collections
           </RouterLink>
+          <RouterLink
+            class="navbar-item"
+            to="/settings"
+            :class="{ 'is-active': route.path === '/settings' }"
+            v-if="authStore.isAuthenticated"
+          >
+            Settings
+          </RouterLink>
         </div>
         <div class="navbar-end" v-if="authStore.isAuthenticated">
           <div class="navbar-item">

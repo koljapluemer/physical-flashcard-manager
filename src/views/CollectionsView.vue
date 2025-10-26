@@ -2,13 +2,19 @@
 import { reactive, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import * as collectionsApi from '../api/collections';
+import * as flashcardsApi from '../api/flashcards';
+import * as renderApi from '../api/render';
+import { downloadPdfBlob, generatePdfFilename } from '../utils/pdfExport';
+import { useSettingsStore } from '../stores/settings';
 import type { Collection } from '../types';
 
 const router = useRouter();
+const settingsStore = useSettingsStore();
 
 const collections = ref<Collection[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const exportingCollectionId = ref<number | null>(null);
 
 const newCollection = reactive({
   title: '',
@@ -97,6 +103,32 @@ async function remove(id: number) {
 
 function openCollection(id: number) {
   router.push({ name: 'collectionDetail', params: { id } });
+}
+
+async function exportCollectionPdf(collection: Collection) {
+  exportingCollectionId.value = collection.id;
+
+  try {
+    const flashcards = await flashcardsApi.getFlashcards(collection.id);
+
+    if (flashcards.length === 0) {
+      window.alert('This collection has no flashcards to export');
+      return;
+    }
+
+    const blob = await renderApi.exportCollectionToPdf(
+      collection,
+      flashcards,
+      settingsStore.cardWidthMm,
+      settingsStore.cardHeightMm
+    );
+    const filename = generatePdfFilename(collection.title);
+    downloadPdfBlob(blob, filename);
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Failed to export PDF');
+  } finally {
+    exportingCollectionId.value = null;
+  }
 }
 
 onMounted(async () => {
@@ -194,6 +226,15 @@ onMounted(async () => {
                 @click="openCollection(collection.id)"
               >
                 Manage Cards
+              </button>
+              <button
+                class="button is-info is-light is-small"
+                type="button"
+                @click="exportCollectionPdf(collection)"
+                :disabled="exportingCollectionId === collection.id"
+                :class="{ 'is-loading': exportingCollectionId === collection.id }"
+              >
+                Export PDF
               </button>
               <button class="button is-light is-small" type="button" @click="startEdit(collection.id)">
                 Edit
