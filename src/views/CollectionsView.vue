@@ -27,6 +27,17 @@ const editForm = reactive({
   description: '',
 });
 
+function formatUpdatedAt(value: string | number | Date) {
+  if (!value) {
+    return '—';
+  }
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return String(value);
+  }
+}
+
 async function loadCollections() {
   loading.value = true;
   error.value = null;
@@ -137,116 +148,151 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="collections-view">
-    <h1 class="title">Collections</h1>
-    <article class="message is-danger" v-if="error">
-      <div class="message-body">
-        {{ error }}
-      </div>
-    </article>
+  <div class="space-y-6">
+    <div>
+      <h1 class="text-3xl font-semibold">Collections</h1>
+      <p class="text-base-content/70 mt-1 text-sm">Create, edit, and export your study decks.</p>
+    </div>
 
-    <div class="box">
-      <h2 class="title is-4">Create Collection</h2>
-      <div class="field">
-        <label class="label" for="collection-name">Title</label>
-        <div class="control">
-          <input
-            id="collection-name"
-            v-model="newCollection.title"
-            class="input"
-            type="text"
-            placeholder="Algebra basics"
-          />
+    <div v-if="error" class="alert alert-error">
+      <span>{{ error }}</span>
+    </div>
+
+    <div class="card bg-base-100 shadow">
+      <div class="card-body space-y-4">
+        <div>
+          <h2 class="card-title text-xl">Create Collection</h2>
+          <p class="text-sm text-base-content/70">Start a new deck with a title and optional description.</p>
         </div>
-      </div>
-
-      <div class="field">
-        <label class="label" for="collection-description">Description</label>
-        <div class="control">
-          <textarea
-            id="collection-description"
-            v-model="newCollection.description"
-            class="textarea"
-            placeholder="Optional description"
-            rows="3"
-          ></textarea>
+        <div class="grid gap-4 md:grid-cols-2">
+          <fieldset class="fieldset w-full">
+            <legend class="fieldset-legend">Title</legend>
+            <input
+              id="collection-name"
+              v-model="newCollection.title"
+              type="text"
+              placeholder="Algebra basics"
+              class="input input-bordered w-full"
+            />
+          </fieldset>
+          <fieldset class="fieldset w-full md:col-span-2">
+            <legend class="fieldset-legend">Description</legend>
+            <textarea
+              id="collection-description"
+              v-model="newCollection.description"
+              class="textarea textarea-bordered"
+              placeholder="Optional description"
+              rows="3"
+            ></textarea>
+          </fieldset>
         </div>
-      </div>
-
-      <div class="field is-grouped">
-        <div class="control">
-          <button class="button is-primary" type="button" @click="handleCreate" :disabled="!newCollection.title">
+        <div class="flex justify-end">
+          <button
+            class="btn btn-primary"
+            type="button"
+            @click="handleCreate"
+            :disabled="!newCollection.title"
+          >
             Create
           </button>
         </div>
       </div>
     </div>
 
-    <div class="mt-5">
-      <h2 class="title is-4">Your Collections</h2>
-      <p class="print-note mb-3">Click a collection to manage flashcards.</p>
-      <p v-if="loading">Loading...</p>
-      <p v-if="!loading && collections.length === 0">
-        No collections yet. Create one above to get started.
-      </p>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 class="card-title text-xl">Your Collections</h2>
+            <p class="text-sm text-base-content/70">Manage cards, export PDFs, or edit deck details.</p>
+          </div>
+        </div>
 
-      <div class="card-grid" v-if="collections.length">
-        <div
-          class="flashcard-preview"
-          v-for="collection in collections"
-          :key="collection.id"
-        >
-          <template v-if="editingId === collection.id">
-            <div class="field">
-              <label class="label">Title</label>
-              <div class="control">
-                <input v-model="editForm.title" class="input" type="text" />
-              </div>
-            </div>
-            <div class="field">
-              <label class="label">Description</label>
-              <div class="control">
-                <textarea v-model="editForm.description" class="textarea" rows="3"></textarea>
-              </div>
-            </div>
-            <div class="buttons">
-              <button class="button is-primary is-small" type="button" @click="saveEdit(collection.id)">
-                Save
-              </button>
-              <button class="button is-light is-small" type="button" @click="cancelEdit">Cancel</button>
-            </div>
-          </template>
-          <template v-else>
-            <h3 class="title is-5">{{ collection.title }}</h3>
-            <p class="mb-3" v-if="collection.description">{{ collection.description }}</p>
-            <div class="buttons">
-              <button
-                class="button is-link is-light is-small"
-                type="button"
-                @click="openCollection(collection.id)"
-              >
-                Manage Cards
-              </button>
-              <button
-                class="button is-info is-light is-small"
-                type="button"
-                @click="exportCollectionPdf(collection)"
-                :disabled="exportingCollectionId === collection.id"
-                :class="{ 'is-loading': exportingCollectionId === collection.id }"
-              >
-                Export PDF
-              </button>
-              <button class="button is-light is-small" type="button" @click="startEdit(collection.id)">
-                Edit
-              </button>
-              <button class="button is-danger is-light is-small" type="button" @click="remove(collection.id)">
-                Delete
-              </button>
-            </div>
-          </template>
-          <p class="has-text-grey is-size-7 mt-3">
-            Updated: {{ new Date(collection.updated_at).toLocaleString() }}
-          </p>
+        <div v-if="loading" class="flex justify-center py-8">
+          <span class="loading loading-dots text-primary"></span>
+        </div>
+
+        <div v-else-if="!collections.length" class="py-8 text-center text-base-content/70">
+          No collections yet. Create one above to get started.
+        </div>
+
+        <div v-else class="overflow-x-auto">
+          <table class="table table-zebra">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Updated</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="collection in collections" :key="collection.id">
+                <td class="align-top">
+                  <div v-if="editingId === collection.id" class="space-y-2">
+                    <fieldset class="fieldset w-full">
+                      <legend class="fieldset-legend text-xs">Title</legend>
+                      <input v-model="editForm.title" class="input input-bordered input-sm w-full" type="text" />
+                    </fieldset>
+                  </div>
+                  <div v-else class="font-semibold">
+                    {{ collection.title }}
+                  </div>
+                </td>
+                <td class="align-top">
+                  <div v-if="editingId === collection.id">
+                    <fieldset class="fieldset w-full">
+                      <legend class="fieldset-legend text-xs">Description</legend>
+                      <textarea
+                        v-model="editForm.description"
+                        class="textarea textarea-bordered textarea-sm w-full"
+                        rows="2"
+                      ></textarea>
+                    </fieldset>
+                  </div>
+                  <div v-else class="text-sm text-base-content/80">
+                    {{ collection.description || '—' }}
+                  </div>
+                </td>
+                <td class="align-top text-sm text-base-content/70">
+                  {{ formatUpdatedAt(collection.updated_at) }}
+                </td>
+                <td class="w-56 align-top">
+                  <div v-if="editingId === collection.id" class="flex flex-wrap gap-2 justify-end">
+                    <button class="btn btn-sm btn-primary" type="button" @click="saveEdit(collection.id)">
+                      Save
+                    </button>
+                    <button class="btn btn-sm" type="button" @click="cancelEdit">
+                      Cancel
+                    </button>
+                  </div>
+                  <div v-else class="flex flex-wrap gap-2 justify-end">
+                    <button class="btn btn-sm" type="button" @click="openCollection(collection.id)">
+                      Manage
+                    </button>
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      @click="exportCollectionPdf(collection)"
+                      :disabled="exportingCollectionId === collection.id"
+                    >
+                      <span
+                        v-if="exportingCollectionId === collection.id"
+                        class="loading loading-spinner loading-xs mr-2"
+                      ></span>
+                      Export
+                    </button>
+                    <button class="btn btn-sm" type="button" @click="startEdit(collection.id)">
+                      Edit
+                    </button>
+                    <button class="btn btn-sm btn-error btn-outline" type="button" @click="remove(collection.id)">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

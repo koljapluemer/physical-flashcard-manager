@@ -28,61 +28,55 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="login-view">
-    <div class="columns is-centered">
-      <div class="column is-5-tablet is-4-desktop">
-        <div class="box">
-          <h1 class="title">Login</h1>
-
-          <article class="message is-danger" v-if="errorMessage">
-            <div class="message-body">
-              {{ errorMessage }}
-            </div>
-          </article>
-
-          <form @submit.prevent="handleLogin">
-            <div class="field">
-              <label class="label" for="email">Email</label>
-              <div class="control">
-                <input
-                  id="email"
-                  v-model="email"
-                  class="input"
-                  type="email"
-                  placeholder="user@example.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="label" for="password">Password</label>
-              <div class="control">
-                <input
-                  id="password"
-                  v-model="password"
-                  class="input"
-                  type="password"
-                  placeholder="Password"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <div class="control">
-                <button
-                  class="button is-primary is-fullwidth"
-                  type="submit"
-                  :disabled="authStore.loading"
-                  :class="{ 'is-loading': authStore.loading }"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
-          </form>
+  <div class="min-h-[70vh] flex items-center justify-center px-4">
+    <div class="card w-full max-w-md bg-base-100 shadow-lg">
+      <div class="card-body space-y-6">
+        <div>
+          <h1 class="card-title text-2xl">Login</h1>
+          <p class="text-sm text-base-content/70">Enter your credentials to continue.</p>
         </div>
+
+        <div v-if="errorMessage" class="alert alert-error">
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="handleLogin">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Email</legend>
+            <input
+              id="email"
+              v-model="email"
+              class="input input-bordered"
+              type="email"
+              placeholder="user@example.com"
+              required
+            />
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Password</legend>
+            <input
+              id="password"
+              v-model="password"
+              class="input input-bordered"
+              type="password"
+              placeholder="••••••••"
+              required
+            />
+          </fieldset>
+
+          <button
+            class="btn btn-primary w-full"
+            type="submit"
+            :disabled="authStore.loading"
+          >
+            <span
+              v-if="authStore.loading"
+              class="loading loading-spinner loading-xs mr-2"
+            ></span>
+            Login
+          </button>
+        </form>
       </div>
     </div>
   </div>

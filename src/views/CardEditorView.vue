@@ -363,156 +363,188 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
 </script>
 
 <template>
-  <div>
-    <button class="button is-light mb-4" type="button" @click="$router.back()">Back</button>
-
-    <div class="mb-5">
-      <h1 class="title">Flashcard Editor</h1>
-      <p class="subtitle">
-        {{ collection?.title || 'Collection' }}
-        <span v-if="!isNew">· Editing card</span>
-        <span v-else>· New card</span>
-      </p>
-    </div>
-
-    <div class="columns">
-      <div class="column is-half">
-        <h2 class="title is-5">Front</h2>
-        <div class="editor-container mb-4">
-          <div class="editor-toolbar">
-            <button
-              type="button"
-              @click="toggleBold(frontEditor)"
-              :class="{ 'is-active': frontEditor?.isActive('bold') }"
-            >
-              Bold
-            </button>
-            <button
-              type="button"
-              @click="toggleItalic(frontEditor)"
-              :class="{ 'is-active': frontEditor?.isActive('italic') }"
-            >
-              Italic
-            </button>
-            <button type="button" @click="toggleBulletList(frontEditor)">
-              Bullets
-            </button>
-            <button type="button" @click="toggleOrderedList(frontEditor)">
-              Numbered
-            </button>
-            <button type="button" @click="setHeading(frontEditor, headingLevel)">
-              Heading
-            </button>
-            <button type="button" @click="startMathInsertion('front', 'inline')">
-              Inline Math
-            </button>
-            <button type="button" @click="startMathInsertion('front', 'block')">
-              Block Math
-            </button>
-            <label class="button">
-              Image
-              <input type="file" class="is-hidden" accept="image/*" @change="insertImageFromPicker(frontEditor, $event)" />
-            </label>
-          </div>
-          <EditorContent v-if="frontEditor" :editor="frontEditor" />
-        </div>
-        <div class="mt-4">
-          <h3 class="title is-6">Preview</h3>
-          <CardPreview :html="frontHtml" side="front" />
-        </div>
-      </div>
-
-      <div class="column is-half">
-        <h2 class="title is-5">Back</h2>
-        <div class="editor-container mb-4">
-          <div class="editor-toolbar">
-            <button
-              type="button"
-              @click="toggleBold(backEditor)"
-              :class="{ 'is-active': backEditor?.isActive('bold') }"
-            >
-              Bold
-            </button>
-            <button
-              type="button"
-              @click="toggleItalic(backEditor)"
-              :class="{ 'is-active': backEditor?.isActive('italic') }"
-            >
-              Italic
-            </button>
-            <button type="button" @click="toggleBulletList(backEditor)">
-              Bullets
-            </button>
-            <button type="button" @click="toggleOrderedList(backEditor)">
-              Numbered
-            </button>
-            <button type="button" @click="setHeading(backEditor, headingLevel)">
-              Heading
-            </button>
-            <button type="button" @click="startMathInsertion('back', 'inline')">
-              Inline Math
-            </button>
-            <button type="button" @click="startMathInsertion('back', 'block')">
-              Block Math
-            </button>
-            <label class="button">
-              Image
-              <input type="file" class="is-hidden" accept="image/*" @change="insertImageFromPicker(backEditor, $event)" />
-            </label>
-          </div>
-          <EditorContent v-if="backEditor" :editor="backEditor" />
-        </div>
-        <div class="mt-4">
-          <h3 class="title is-6">Preview</h3>
-          <CardPreview :html="backHtml" side="back" />
-        </div>
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <button class="btn btn-ghost" type="button" @click="$router.back()">Back</button>
+      <div class="text-right">
+        <h1 class="text-3xl font-semibold">Flashcard Editor</h1>
+        <p class="text-sm text-base-content/70">
+          {{ collection?.title || 'Collection' }}
+          <span v-if="!isNew">· Editing card</span>
+          <span v-else>· New card</span>
+        </p>
       </div>
     </div>
 
-    <div class="buttons mt-4">
-      <button class="button is-primary" type="button" @click="handleSave" :disabled="saveLoading">
+    <div class="grid gap-6 lg:grid-cols-2">
+      <div class="space-y-4">
+        <div class="card bg-base-100 shadow">
+          <div class="card-body space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title text-xl">Front</h2>
+            </div>
+            <div class="editor-container">
+              <div class="editor-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': frontEditor?.isActive('bold') }"
+                  @click="toggleBold(frontEditor)"
+                >
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': frontEditor?.isActive('italic') }"
+                  @click="toggleItalic(frontEditor)"
+                >
+                  Italic
+                </button>
+                <button type="button" class="btn btn-xs" @click="toggleBulletList(frontEditor)">Bullets</button>
+                <button type="button" class="btn btn-xs" @click="toggleOrderedList(frontEditor)">Numbered</button>
+                <button type="button" class="btn btn-xs" @click="setHeading(frontEditor, headingLevel)">
+                  Heading
+                </button>
+                <button type="button" class="btn btn-xs" @click="startMathInsertion('front', 'inline')">
+                  Inline Math
+                </button>
+                <button type="button" class="btn btn-xs" @click="startMathInsertion('front', 'block')">
+                  Block Math
+                </button>
+                <label class="btn btn-xs">
+                  Image
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept="image/*"
+                    @change="insertImageFromPicker(frontEditor, $event)"
+                  />
+                </label>
+              </div>
+              <EditorContent v-if="frontEditor" :editor="frontEditor" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-base-100 shadow">
+          <div class="card-body space-y-3">
+            <h3 class="card-title text-lg">Front Preview</h3>
+            <CardPreview :html="frontHtml" side="front" />
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="card bg-base-100 shadow">
+          <div class="card-body space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="card-title text-xl">Back</h2>
+            </div>
+            <div class="editor-container">
+              <div class="editor-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': backEditor?.isActive('bold') }"
+                  @click="toggleBold(backEditor)"
+                >
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': backEditor?.isActive('italic') }"
+                  @click="toggleItalic(backEditor)"
+                >
+                  Italic
+                </button>
+                <button type="button" class="btn btn-xs" @click="toggleBulletList(backEditor)">Bullets</button>
+                <button type="button" class="btn btn-xs" @click="toggleOrderedList(backEditor)">Numbered</button>
+                <button type="button" class="btn btn-xs" @click="setHeading(backEditor, headingLevel)">
+                  Heading
+                </button>
+                <button type="button" class="btn btn-xs" @click="startMathInsertion('back', 'inline')">
+                  Inline Math
+                </button>
+                <button type="button" class="btn btn-xs" @click="startMathInsertion('back', 'block')">
+                  Block Math
+                </button>
+                <label class="btn btn-xs">
+                  Image
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept="image/*"
+                    @change="insertImageFromPicker(backEditor, $event)"
+                  />
+                </label>
+              </div>
+              <EditorContent v-if="backEditor" :editor="backEditor" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card bg-base-100 shadow">
+          <div class="card-body space-y-3">
+            <h3 class="card-title text-lg">Back Preview</h3>
+            <CardPreview :html="backHtml" side="back" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <button class="btn btn-primary" type="button" @click="handleSave" :disabled="saveLoading">
+        <span v-if="saveLoading" class="loading loading-spinner loading-xs mr-2"></span>
         {{ saveLoading ? 'Saving…' : 'Save Card' }}
       </button>
-      <button class="button is-light" type="button" @click="$router.back()">Cancel</button>
+      <button class="btn" type="button" @click="$router.back()">Cancel</button>
     </div>
 
-    <div v-if="mathModal.open" class="modal is-active">
-      <div class="modal-background" @click="closeMathModal"></div>
-      <div class="modal-card math-modal">
-        <header class="modal-card-head">
-          <p class="modal-card-title">
-            {{ mathModal.isEditing ? 'Edit' : 'Insert' }}
-            {{ mathModal.mode === 'inline' ? 'Inline' : 'Block' }} Math
-          </p>
-          <button class="delete" type="button" aria-label="close" @click="closeMathModal"></button>
-        </header>
-        <section class="modal-card-body">
-          <label class="label" for="math-expression">LaTeX expression</label>
+    <dialog v-if="mathModal.open" class="modal modal-open" open>
+      <div class="modal-box math-modal space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-xl font-semibold">
+              {{ mathModal.isEditing ? 'Edit' : 'Insert' }} {{ mathModal.mode === 'inline' ? 'Inline' : 'Block' }} Math
+            </h3>
+            <p class="text-sm text-base-content/70">
+              Enter LaTeX to render with KaTeX.
+            </p>
+          </div>
+          <button class="btn btn-sm btn-ghost" type="button" @click="closeMathModal">Close</button>
+        </div>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">LaTeX Expression</legend>
           <textarea
             id="math-expression"
             ref="mathTextareaRef"
-            class="textarea"
+            class="textarea textarea-bordered"
             :rows="mathModal.mode === 'block' ? 5 : 3"
             placeholder="Enter LaTeX, e.g. \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
             v-model="mathModal.latex"
             @keydown="handleMathModalKeydown"
           ></textarea>
-          <p v-if="mathModalError" class="help is-danger mt-1">
-            {{ mathModalError }}
-          </p>
-          <div v-if="mathModal.latex.trim().length" class="math-modal-preview">
-            <p class="has-text-grey is-size-7 mb-1">Live preview (KaTeX)</p>
-            <div v-if="mathPreview.html" v-html="mathPreview.html"></div>
-            <p v-else class="has-text-danger">{{ mathPreview.error }}</p>
-          </div>
-        </section>
-        <footer class="modal-card-foot">
-          <button class="button is-primary" type="button" @click="saveMathModal">
+        </fieldset>
+        <p v-if="mathModalError" class="text-sm text-error">
+          {{ mathModalError }}
+        </p>
+        <div v-if="mathModal.latex.trim().length" class="math-modal-preview">
+          <p class="text-xs text-base-content/60 mb-2">Live preview (KaTeX)</p>
+          <div v-if="mathPreview.html" v-html="mathPreview.html"></div>
+          <p v-else class="text-error text-sm">{{ mathPreview.error }}</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button class="btn btn-primary" type="button" @click="saveMathModal">
             {{ mathModal.isEditing ? 'Update Math' : 'Insert Math' }}
           </button>
-          <button class="button" type="button" @click="closeMathModal">Cancel</button>
-        </footer>
+          <button class="btn" type="button" @click="closeMathModal">Cancel</button>
+        </div>
       </div>
-    </div>
+      <form method="dialog" class="modal-backdrop">
+        <button @click="closeMathModal">close</button>
+      </form>
+    </dialog>
   </div>
 </template>

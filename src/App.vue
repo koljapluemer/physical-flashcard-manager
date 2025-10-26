@@ -18,45 +18,44 @@ function handleLogout() {
 </script>
 
 <template>
-  <div class="app-shell">
-    <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <RouterLink class="navbar-item" to="/collections">
-          <span class="has-text-weight-semibold">Flashcard Manager</span>
+  <div class="min-h-screen bg-base-200 text-base-content">
+    <nav class="navbar bg-base-100 border-b border-base-300">
+      <div class="flex-1">
+        <RouterLink class="btn btn-ghost text-xl normal-case" to="/collections">
+          Flashcard Manager
         </RouterLink>
       </div>
-      <div class="navbar-menu is-active">
-        <div class="navbar-start">
-          <RouterLink
-            class="navbar-item"
-            to="/collections"
-            :class="{ 'is-active': route.path.startsWith('/collections') }"
-          >
-            Collections
-          </RouterLink>
-          <RouterLink
-            class="navbar-item"
-            to="/settings"
-            :class="{ 'is-active': route.path === '/settings' }"
-            v-if="authStore.isAuthenticated"
-          >
-            Settings
-          </RouterLink>
-        </div>
-        <div class="navbar-end" v-if="authStore.isAuthenticated">
-          <div class="navbar-item">
-            <button class="button is-light is-small" @click="handleLogout">
-              Logout
-            </button>
-          </div>
-        </div>
+      <div class="flex-none gap-2">
+        <RouterLink
+          class="btn btn-ghost"
+          to="/collections"
+          :class="{ 'btn-active': route.path.startsWith('/collections') }"
+        >
+          Collections
+        </RouterLink>
+        <RouterLink
+          v-if="authStore.isAuthenticated"
+          class="btn btn-ghost"
+          to="/settings"
+          :class="{ 'btn-active': route.path === '/settings' }"
+        >
+          Settings
+        </RouterLink>
+        <button
+          v-if="authStore.isAuthenticated"
+          type="button"
+          class="btn btn-outline btn-sm"
+          @click="handleLogout"
+        >
+          Logout
+        </button>
       </div>
     </nav>
 
-    <section class="section">
-      <div class="container">
+    <main class="py-6 px-4 sm:px-8">
+      <div class="mx-auto w-full max-w-6xl">
         <RouterView />
       </div>
-    </section>
+    </main>
   </div>
 </template>

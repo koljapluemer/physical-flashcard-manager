@@ -5,45 +5,49 @@ const settingsStore = useSettingsStore();
 </script>
 
 <template>
-  <div class="settings-view">
-    <h1 class="title">Settings</h1>
+  <div class="space-y-6">
+    <div>
+      <h1 class="text-3xl font-semibold">Settings</h1>
+      <p class="text-sm text-base-content/70">Adjust preview and export defaults.</p>
+    </div>
 
-    <div class="box">
-      <h2 class="title is-4">Card Dimensions (millimeters)</h2>
-      <p class="mb-4">Set the size of your flashcards for both preview and printing.</p>
-
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Width (mm)</label>
+    <div class="card bg-base-100 shadow">
+      <div class="card-body space-y-6">
+        <div>
+          <h2 class="card-title text-xl">Card Dimensions (millimeters)</h2>
+          <p class="text-sm text-base-content/70">
+            Set the size for both the in-app preview and PDF exports.
+          </p>
         </div>
-        <div class="field-body">
-          <div class="field">
-            <div class="control">
-              <input v-model.number="settingsStore.cardWidthMm" class="input" type="number" step="1" min="1" />
-            </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Width (mm)</legend>
+            <input
+              v-model.number="settingsStore.cardWidthMm"
+              class="input input-bordered"
+              type="number"
+              step="1"
+              min="1"
+            />
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Height (mm)</legend>
+            <input
+              v-model.number="settingsStore.cardHeightMm"
+              class="input input-bordered"
+              type="number"
+              step="1"
+              min="1"
+            />
+          </fieldset>
+        </div>
+        <div class="alert alert-info">
+          <div>
+            <p>Changes apply immediately to previews and PDF output.</p>
+            <p class="mt-1 text-sm">Standard business card: 89mm × 51mm (3.5" × 2").</p>
           </div>
         </div>
       </div>
-
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Height (mm)</label>
-        </div>
-        <div class="field-body">
-          <div class="field">
-            <div class="control">
-              <input v-model.number="settingsStore.cardHeightMm" class="input" type="number" step="1" min="1" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <article class="message is-info mt-4">
-        <div class="message-body">
-          <p>Changes apply immediately to the card preview in the editor and PDF exports.</p>
-          <p class="mt-2">Standard business card: 89mm × 51mm (3.5" × 2")</p>
-        </div>
-      </article>
     </div>
   </div>
 </template>
