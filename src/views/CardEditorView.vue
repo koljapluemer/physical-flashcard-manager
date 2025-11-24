@@ -26,6 +26,7 @@ const card = ref<Flashcard | null>(null);
 const saveLoading = ref(false);
 const frontHtml = ref('');
 const backHtml = ref('');
+const headerRight = ref('');
 const headingLevel: Level = 3;
 
 type EditorSide = 'front' | 'back';
@@ -276,6 +277,7 @@ async function loadData() {
 
       frontHtml.value = frontContent;
       backHtml.value = backContent;
+      headerRight.value = card.value.header_right || '';
     } else {
       card.value = null;
       const emptyContent = '<p></p>';
@@ -285,6 +287,7 @@ async function loadData() {
 
       frontHtml.value = emptyContent;
       backHtml.value = emptyContent;
+      headerRight.value = '';
     }
   } catch (err) {
     console.error('Failed to load data', err);
@@ -335,12 +338,14 @@ async function handleSave() {
         collection: collectionId,
         front: frontEditor.value.getHTML(),
         back: backEditor.value.getHTML(),
+        header_right: headerRight.value.trim() || undefined,
       });
     } else {
       const cardIdNum = parseInt(props.cardId, 10);
       await flashcardsApi.updateFlashcard(cardIdNum, {
         front: frontEditor.value.getHTML(),
         back: backEditor.value.getHTML(),
+        header_right: headerRight.value.trim() || undefined,
       });
     }
     router.push({ name: 'collectionDetail', params: { id: props.id } });
@@ -359,6 +364,10 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
   }
   void insertResizedImages(files, editor);
   target.value = '';
+}
+
+function fillHeaderRight(text: string) {
+  headerRight.value = text;
 }
 </script>
 
@@ -380,6 +389,22 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
       <div class="space-y-4">
         <div class="card bg-base-100 shadow">
           <div class="card-body space-y-4">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Card Header (Right)</legend>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <button @click="fillHeaderRight('Overview')" type="button" class="btn btn-xs">Overview</button>
+                <button @click="fillHeaderRight('Level 1')" type="button" class="btn btn-xs">Level 1</button>
+                <button @click="fillHeaderRight('Level 2')" type="button" class="btn btn-xs">Level 2</button>
+                <button @click="fillHeaderRight('Level 3')" type="button" class="btn btn-xs">Level 3</button>
+              </div>
+              <input
+                v-model="headerRight"
+                type="text"
+                class="input input-bordered w-full"
+                placeholder="Optional text shown on front of card"
+              />
+            </fieldset>
+
             <div class="flex items-center justify-between">
               <h2 class="card-title text-xl">Front</h2>
             </div>
@@ -430,7 +455,12 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
         <div class="card bg-base-100 shadow">
           <div class="card-body space-y-3">
             <h3 class="card-title text-lg">Front Preview</h3>
-            <CardPreview :html="frontHtml" side="front" />
+            <CardPreview
+              :html="frontHtml"
+              side="front"
+              :collection="collection ?? undefined"
+              :flashcard="{ header_right: headerRight } as any"
+            />
           </div>
         </div>
       </div>
@@ -488,7 +518,11 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
         <div class="card bg-base-100 shadow">
           <div class="card-body space-y-3">
             <h3 class="card-title text-lg">Back Preview</h3>
-            <CardPreview :html="backHtml" side="back" />
+            <CardPreview
+              :html="backHtml"
+              side="back"
+              :collection="collection ?? undefined"
+            />
           </div>
         </div>
       </div>

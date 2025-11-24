@@ -16,6 +16,7 @@ export interface Flashcard {
   collection: number;
   front: string;
   back: string;
+  header_right?: string;
   created_at: string;
   updated_at: string;
 }

@@ -261,7 +261,12 @@ function setPreviewSide(side: 'front' | 'back') {
         </div>
 
         <div v-if="previewCard" class="space-y-4">
-          <CardPreview :html="previewHtml" :side="previewSide" :collection="collection ?? undefined" />
+          <CardPreview
+            :html="previewHtml"
+            :side="previewSide"
+            :collection="collection ?? undefined"
+            :flashcard="previewCard"
+          />
         </div>
       </div>
       <form method="dialog" class="modal-backdrop">

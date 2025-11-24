@@ -84,7 +84,7 @@ Collection representation:
 | Method | Description                 | Notes                                                                          |
 |--------|-----------------------------|--------------------------------------------------------------------------------|
 | GET    | List flashcards             | Optional query param `collection=<id>` filters by collection                   |
-| POST   | Create a flashcard          | Requires `collection`, `front`, `back`                                        |
+| POST   | Create a flashcard          | Requires `collection`, `front`, `back`; `header_right` is optional            |
 
 `/api/flashcards/{id}/`
 
@@ -103,10 +103,14 @@ Flashcard representation:
   "collection": 1,
   "front": "What is photosynthesis?",
   "back": "The process plants use to convert light energy into chemical energy.",
+  "header_right": "Page 42",
   "created_at": "2025-01-02T13:00:00Z",
   "updated_at": "2025-01-02T13:05:00Z"
 }
 ```
+
+**Optional Fields:**
+- `header_right` - Text displayed on right side of flashcard header (max 200 characters, default: empty string)
 
 ## Errors
 

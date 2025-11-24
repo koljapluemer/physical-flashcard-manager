@@ -16,13 +16,17 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
   const backgroundColor = collection.background_color ?? '#f0f0f0';
   const fontColor = collection.font_color ?? '#171717';
   const headerFontColor = collection.header_font_color ?? '#ffffff';
-  const headerText = collection.header_text_left ?? '';
+  const headerTextLeft = collection.header_text_left ?? '';
+  const headerTextRight = side === 'front' ? (card.header_right ?? '') : '';
+
+  const showHeader = headerTextLeft || headerTextRight;
 
   return `
     <div class="flashcard-page" style="background-color: ${backgroundColor}; width: 100%; height: 100%; display: flex; flex-direction: column;">
-      ${headerText ? `
-        <div class="flashcard-header" style="background-color: ${headerColor}; color: ${headerFontColor}; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.875rem;">
-          ${headerText}
+      ${showHeader ? `
+        <div class="flashcard-header" style="background-color: ${headerColor}; color: ${headerFontColor}; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;">
+          ${headerTextLeft ? `<span style="flex-shrink: 0;">${headerTextLeft}</span>` : ''}
+          ${headerTextRight ? `<span style="flex-shrink: 0; margin-left: auto;">${headerTextRight}</span>` : ''}
         </div>
       ` : ''}
       <div class="flashcard-preview-content" style="color: ${fontColor}; flex: 1;">
