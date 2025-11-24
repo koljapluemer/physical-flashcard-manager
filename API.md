@@ -42,7 +42,7 @@ Tokens are persistent and tied to the user; rotate them by deleting/recreating v
 | Method | Description                 | Notes                                    |
 |--------|-----------------------------|------------------------------------------|
 | GET    | List collections            | Returns an array of collection objects   |
-| POST   | Create a collection         | `title` (required), `description` (optional) |
+| POST   | Create a collection         | `title` (required), `description` (optional), styling fields (optional) |
 
 `/api/collections/{id}/`
 
@@ -60,10 +60,22 @@ Collection representation:
   "id": 1,
   "title": "Biology 101",
   "description": "Introductory course",
+  "header_color": "#100e75",
+  "background_color": "#f0f0f0",
+  "font_color": "#171717",
+  "header_font_color": "#fff",
+  "header_text_left": "Chapter 1",
   "created_at": "2025-01-01T12:00:00Z",
   "updated_at": "2025-01-02T09:30:00Z"
 }
 ```
+
+**Styling Fields:**
+- `header_color` - Hex color for collection header background (default: `#100e75`)
+- `background_color` - Hex color for collection card background (default: `#f0f0f0`)
+- `font_color` - Hex color for general text (default: `#171717`)
+- `header_font_color` - Hex color for header text (default: `#fff`)
+- `header_text_left` - Text displayed on left side of header (default: empty string, optional)
 
 ### Flashcards
 

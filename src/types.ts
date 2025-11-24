@@ -2,6 +2,11 @@ export interface Collection {
   id: number;
   title: string;
   description?: string;
+  header_color?: string;
+  background_color?: string;
+  font_color?: string;
+  header_font_color?: string;
+  header_text_left?: string;
   created_at: string;
   updated_at: string;
 }

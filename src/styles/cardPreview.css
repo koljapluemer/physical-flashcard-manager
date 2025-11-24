@@ -4,6 +4,14 @@
 .flashcard-preview-container {
   display: inline-block;
   border: 1px solid #ddd;
-  background: white;
+  background: var(--background-color, #f0f0f0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard-header {
+  background-color: var(--header-color, #100e75);
+  color: var(--header-font-color, #ffffff);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
 }

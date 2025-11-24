@@ -24,6 +24,11 @@ const modalState = reactive({
   initial: {
     title: '',
     description: '',
+    header_color: '#100e75',
+    background_color: '#f0f0f0',
+    font_color: '#171717',
+    header_font_color: '#ffffff',
+    header_text_left: '',
   },
   editingId: null as number | null,
 });
@@ -52,6 +57,11 @@ function openCreateModal() {
   modalState.editingId = null;
   modalState.initial.title = '';
   modalState.initial.description = '';
+  modalState.initial.header_color = '#100e75';
+  modalState.initial.background_color = '#f0f0f0';
+  modalState.initial.font_color = '#171717';
+  modalState.initial.header_font_color = '#ffffff';
+  modalState.initial.header_text_left = '';
   modalState.open = true;
 }
 
@@ -60,6 +70,11 @@ function openEditModal(collection: Collection) {
   modalState.editingId = collection.id;
   modalState.initial.title = collection.title;
   modalState.initial.description = collection.description ?? '';
+  modalState.initial.header_color = collection.header_color ?? '#100e75';
+  modalState.initial.background_color = collection.background_color ?? '#f0f0f0';
+  modalState.initial.font_color = collection.font_color ?? '#171717';
+  modalState.initial.header_font_color = collection.header_font_color ?? '#ffffff';
+  modalState.initial.header_text_left = collection.header_text_left ?? '';
   modalState.open = true;
 }
 
@@ -67,7 +82,15 @@ function closeModal() {
   modalState.open = false;
 }
 
-async function handleCollectionSubmit(payload: { title: string; description: string }) {
+async function handleCollectionSubmit(payload: {
+  title: string;
+  description: string;
+  header_color: string;
+  background_color: string;
+  font_color: string;
+  header_font_color: string;
+  header_text_left: string;
+}) {
   if (!payload.title.trim()) {
     return;
   }
@@ -79,11 +102,21 @@ async function handleCollectionSubmit(payload: { title: string; description: str
       await collectionsApi.createCollection({
         title: payload.title,
         description: payload.description || undefined,
+        header_color: payload.header_color,
+        background_color: payload.background_color,
+        font_color: payload.font_color,
+        header_font_color: payload.header_font_color,
+        header_text_left: payload.header_text_left || undefined,
       });
     } else if (modalState.editingId != null) {
       await collectionsApi.updateCollection(modalState.editingId, {
         title: payload.title,
         description: payload.description || undefined,
+        header_color: payload.header_color,
+        background_color: payload.background_color,
+        font_color: payload.font_color,
+        header_font_color: payload.header_font_color,
+        header_text_left: payload.header_text_left || undefined,
       });
     }
     await loadCollections();

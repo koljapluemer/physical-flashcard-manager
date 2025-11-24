@@ -7,26 +7,49 @@ const props = defineProps<{
   initialValues: {
     title: string;
     description?: string;
+    header_color?: string;
+    background_color?: string;
+    font_color?: string;
+    header_font_color?: string;
+    header_text_left?: string;
   };
   loading?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'submit', payload: { title: string; description: string }): void;
+  (e: 'submit', payload: {
+    title: string;
+    description: string;
+    header_color: string;
+    background_color: string;
+    font_color: string;
+    header_font_color: string;
+    header_text_left: string;
+  }): void;
 }>();
 
 const form = reactive({
   title: '',
   description: '',
+  header_color: '#100e75',
+  background_color: '#f0f0f0',
+  font_color: '#171717',
+  header_font_color: '#ffffff',
+  header_text_left: '',
 });
 
 watch(
-  () => [props.open, props.initialValues.title, props.initialValues.description],
+  () => [props.open, props.initialValues],
   () => {
     if (props.open) {
       form.title = props.initialValues.title ?? '';
       form.description = props.initialValues.description ?? '';
+      form.header_color = props.initialValues.header_color ?? '#100e75';
+      form.background_color = props.initialValues.background_color ?? '#f0f0f0';
+      form.font_color = props.initialValues.font_color ?? '#171717';
+      form.header_font_color = props.initialValues.header_font_color ?? '#ffffff';
+      form.header_text_left = props.initialValues.header_text_left ?? '';
     }
   },
   { immediate: true }
@@ -44,6 +67,11 @@ function handleSubmit() {
   emit('submit', {
     title: form.title.trim(),
     description: form.description.trim(),
+    header_color: form.header_color,
+    background_color: form.background_color,
+    font_color: form.font_color,
+    header_font_color: form.header_font_color,
+    header_text_left: form.header_text_left.trim(),
   });
 }
 
@@ -90,6 +118,52 @@ const descriptionText = computed(() =>
             class="textarea textarea-bordered w-full"
             placeholder="Optional description"
           ></textarea>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Header Text (Left)</legend>
+          <input
+            v-model="form.header_text_left"
+            type="text"
+            placeholder="e.g., Chapter 1"
+            class="input input-bordered w-full"
+          />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Header Color</legend>
+          <input
+            v-model="form.header_color"
+            type="color"
+            class="input input-bordered w-24 h-12 cursor-pointer"
+          />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Header Font Color</legend>
+          <input
+            v-model="form.header_font_color"
+            type="color"
+            class="input input-bordered w-24 h-12 cursor-pointer"
+          />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Background Color</legend>
+          <input
+            v-model="form.background_color"
+            type="color"
+            class="input input-bordered w-24 h-12 cursor-pointer"
+          />
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Font Color</legend>
+          <input
+            v-model="form.font_color"
+            type="color"
+            class="input input-bordered w-24 h-12 cursor-pointer"
+          />
         </fieldset>
       </div>
 

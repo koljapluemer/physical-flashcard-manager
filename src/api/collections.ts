@@ -12,6 +12,11 @@ export async function getCollection(id: number): Promise<Collection> {
 export async function createCollection(data: {
   title: string;
   description?: string;
+  header_color?: string;
+  background_color?: string;
+  font_color?: string;
+  header_font_color?: string;
+  header_text_left?: string;
 }): Promise<Collection> {
   return apiRequest<Collection>('/collections/', {
     method: 'POST',
@@ -21,7 +26,15 @@ export async function createCollection(data: {
 
 export async function updateCollection(
   id: number,
-  data: Partial<{ title: string; description?: string }>
+  data: Partial<{
+    title: string;
+    description?: string;
+    header_color?: string;
+    background_color?: string;
+    font_color?: string;
+    header_font_color?: string;
+    header_text_left?: string;
+  }>
 ): Promise<Collection> {
   return apiRequest<Collection>(`/collections/${id}/`, {
     method: 'PATCH',
