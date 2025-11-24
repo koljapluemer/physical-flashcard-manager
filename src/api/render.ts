@@ -40,11 +40,27 @@ function buildHeadHtml(): string {
         color-scheme: light;
       }
 
-      body {
+      html, body {
         margin: 0;
         padding: 0;
         font-family: "Helvetica Neue", Arial, sans-serif;
         background: #fff;
+        height: 100%;
+      }
+
+      .pdf-page {
+        height: 100%;
+        page-break-after: always;
+        page-break-inside: avoid;
+      }
+
+      .pdf-page:last-child {
+        page-break-after: auto;
+      }
+
+      .flashcard-page {
+        height: 100%;
+        box-sizing: border-box;
       }
 
 ${cardContentCss}
