@@ -25,9 +25,9 @@ function handleLogout() {
           Flashcard Manager
         </RouterLink>
       </div>
-      <div class="flex-none gap-2">
+      <div class="flex-none flex gap-2">
         <RouterLink
-          class="btn btn-ghost"
+          class="btn"
           to="/collections"
           :class="{ 'btn-active': route.path.startsWith('/collections') }"
         >
@@ -35,7 +35,7 @@ function handleLogout() {
         </RouterLink>
         <RouterLink
           v-if="authStore.isAuthenticated"
-          class="btn btn-ghost"
+          class="btn"
           to="/settings"
           :class="{ 'btn-active': route.path === '/settings' }"
         >
@@ -44,7 +44,7 @@ function handleLogout() {
         <button
           v-if="authStore.isAuthenticated"
           type="button"
-          class="btn btn-outline btn-sm"
+          class="btn"
           @click="handleLogout"
         >
           Logout
