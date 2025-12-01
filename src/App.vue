@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import ToastHost from './components/ToastHost.vue';
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -43,5 +44,7 @@ onMounted(() => {
         <RouterView />
       </div>
     </main>
+
+    <ToastHost />
   </div>
 </template>

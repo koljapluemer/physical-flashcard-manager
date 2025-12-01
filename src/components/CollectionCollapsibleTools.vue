@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch, withDefaults } from 'vue';
 import { Download, Sparkles } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 import { OpenAI } from 'openai';
 import CardPreview from './CardPreview.vue';
 import * as materialsApi from '../api/materials';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard, Material } from '../types';
+import { useSettingsStore } from '../stores/settings';
+import { useToastStore } from '../stores/toast';
 
 const DEFAULT_PROMPT =
   'Generate concise Q&A flashcards that fit on small physical cards. Keep answers short and scannable. Prefer one concept per card. Use the attached material as a guideline, but do not copy verbatim from it. If math is included, render it as inline latex syntax. Set the header text to either "Level 1", "Level 2", or "Level 3", depending on the difficulty of the card.';
@@ -36,8 +39,11 @@ const emit = defineEmits<{
   (e: 'created'): void;
 }>();
 
+const settingsStore = useSettingsStore();
+const toastStore = useToastStore();
+const router = useRouter();
+
 const aiModalOpen = ref(false);
-const apiKey = ref('');
 const model = ref('gpt-4o-mini');
 const prompt = ref(DEFAULT_PROMPT);
 const includeMaterials = ref(true);
@@ -87,6 +93,11 @@ function handleDownload() {
 }
 
 function openAiModal() {
+  if (!settingsStore.openaiApiKey.trim()) {
+    toastStore.push('to use AI generation, set OpenAI API key', 'warning');
+    router.push({ name: 'settings' });
+    return;
+  }
   aiModalOpen.value = true;
 }
 
@@ -112,7 +123,6 @@ async function loadMaterials() {
 }
 
 function resetModal() {
-  apiKey.value = '';
   model.value = 'gpt-4o-mini';
   prompt.value = DEFAULT_PROMPT;
   includeMaterials.value = true;
@@ -213,8 +223,12 @@ async function generateDrafts() {
     aiError.value = 'Select a collection first.';
     return;
   }
-  if (!apiKey.value.trim()) {
-    aiError.value = 'Enter your OpenAI API key.';
+  const openaiKey = settingsStore.openaiApiKey.trim();
+  if (!openaiKey) {
+    aiError.value = 'Add your OpenAI API key in Settings.';
+    closeAiModal();
+    toastStore.push('to use AI generation, set OpenAI API key', 'warning');
+    router.push({ name: 'settings' });
     return;
   }
 
@@ -223,7 +237,7 @@ async function generateDrafts() {
 
   try {
     const client = new OpenAI({
-      apiKey: apiKey.value.trim(),
+      apiKey: openaiKey,
       dangerouslyAllowBrowser: true,
     });
 
@@ -342,7 +356,7 @@ async function saveSelected() {
         <div>
           <h3 class="text-xl font-semibold">Generate Flashcards</h3>
           <p class="text-base-content/70">
-            Provide your OpenAI key, edit the prompt, and pick which generated cards to keep.
+            Uses the OpenAI API key saved in Settings. Adjust the prompt and pick which generated cards to keep.
           </p>
         </div>
         <button class="btn  btn-sm" type="button" @click="closeAiModal" :disabled="generating || saving">
@@ -350,19 +364,7 @@ async function saveSelected() {
         </button>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2">
-        <fieldset class="fieldset">
-          <label for="ai-api-key" class="label">OpenAI API Key</label>
-          <input
-            id="ai-api-key"
-            v-model="apiKey"
-            type="password"
-            class="input"
-            placeholder="sk-..."
-            autocomplete="off"
-          />
-        </fieldset>
-
+      <div class="grid gap-4 md:grid-cols-[1.2fr_auto] md:items-end">
         <fieldset class="fieldset">
           <label for="ai-model" class="label">Model</label>
           <input
@@ -373,6 +375,9 @@ async function saveSelected() {
             placeholder="gpt-4o-mini"
           />
         </fieldset>
+        <p class="text-base-content/70 md:text-right">
+          Update the API key anytime in Settings.
+        </p>
       </div>
 
       <fieldset class="fieldset">
