@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 
 const authStore = useAuthStore();
 const route = useRoute();
-const router = useRouter();
 
 onMounted(() => {
   authStore.init();
 });
-
-function handleLogout() {
-  authStore.logout();
-  router.push({ name: 'login' });
-}
 </script>
 
 <template>
@@ -41,14 +35,6 @@ function handleLogout() {
         >
           Settings
         </RouterLink>
-        <button
-          v-if="authStore.isAuthenticated"
-          type="button"
-          class="btn"
-          @click="handleLogout"
-        >
-          Logout
-        </button>
       </div>
     </nav>
 

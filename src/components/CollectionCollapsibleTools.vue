@@ -8,7 +8,7 @@ import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard, Material } from '../types';
 
 const DEFAULT_PROMPT =
-  'Generate concise Q&A flashcards that fit on small physical cards. Keep answers short and scannable. Prefer one concept per card.';
+  'Generate concise Q&A flashcards that fit on small physical cards. Keep answers short and scannable. Prefer one concept per card. Use the attached material as a guideline, but do not copy verbatim from it. If math is included, render it as inline latex syntax. Set the header text to either "Level 1", "Level 2", or "Level 3", depending on the difficulty of the card.';
 
 type Draft = {
   id: string;
