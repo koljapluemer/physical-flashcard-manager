@@ -37,6 +37,14 @@
   padding-left: 1.5em;
 }
 
+.flashcard-preview-content ul {
+  list-style: disc;
+}
+
+.flashcard-preview-content ol {
+  list-style: decimal;
+}
+
 .flashcard-preview-content li {
   margin-bottom: 0.25em;
 }

@@ -90,6 +90,14 @@ a {
   padding-left: 1.5rem;
 }
 
+.tiptap ul {
+  list-style: disc;
+}
+
+.tiptap ol {
+  list-style: decimal;
+}
+
 .tiptap aside.flashcard-box {
   background: var(--box-bg-color, color-mix(in srgb, var(--header-color, #100e75) 10%, transparent));
   border: 1px solid var(--box-border-color, color-mix(in srgb, var(--header-color, #100e75) 18%, transparent));
