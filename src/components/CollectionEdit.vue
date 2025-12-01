@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import CardPreview from './CardPreview.vue';
+import type { Collection } from '../types';
 
 const props = defineProps<{
   open: boolean;
@@ -84,6 +86,19 @@ const descriptionText = computed(() =>
     ? 'Define a new deck with a title and optional description.'
     : 'Update the collection details below.'
 );
+
+const previewCollection = computed<Collection>(() => ({
+  id: 0,
+  title: form.title || 'Sample Collection',
+  description: form.description,
+  header_color: form.header_color,
+  background_color: form.background_color,
+  font_color: form.font_color,
+  header_font_color: form.header_font_color,
+  header_text_left: form.header_text_left,
+  created_at: '',
+  updated_at: '',
+}));
 </script>
 
 <template>
@@ -97,6 +112,16 @@ const descriptionText = computed(() =>
           </p>
         </div>
         <button class="btn btn-sm btn-ghost" type="button" @click="handleClose">Close</button>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-sm text-base-content/70">Example card</p>
+        <CardPreview
+          :collection="previewCollection"
+          side="front"
+          :front-only="true"
+          :use-demo-values="true"
+        />
       </div>
 
       <div class="space-y-4">

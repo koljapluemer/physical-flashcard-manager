@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
@@ -7,6 +7,12 @@ import * as renderApi from '../api/render';
 import { downloadPdfBlob, generatePdfFilename } from '../utils/pdfExport';
 import { useSettingsStore } from '../stores/settings';
 import CardPreview from '../components/CardPreview.vue';
+import CollectionEdit from '../components/CollectionEdit.vue';
+import CollectionMetaData from '../components/CollectionMetaData.vue';
+import CollectionCollapsibleMaterials from '../components/CollectionCollapsibleMaterials.vue';
+import CollectionCollapsibleTools from '../components/CollectionCollapsibleTools.vue';
+import CollectionCollapsibleFlashcards from '../components/CollectionCollapsibleFlashcards.vue';
+import CollectionCollapsibleDangerZone from '../components/CollectionCollapsibleDangerZone.vue';
 import type { Collection, Flashcard } from '../types';
 
 const props = defineProps<{
@@ -21,9 +27,24 @@ const cards = ref<Flashcard[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const exportingPdf = ref(false);
+const deletingCollection = ref(false);
 const previewModalRef = ref<HTMLDialogElement | null>(null);
 const previewCard = ref<Flashcard | null>(null);
 const previewSide = ref<'front' | 'back'>('front');
+
+const modalState = reactive({
+  open: false,
+  loading: false,
+  initial: {
+    title: '',
+    description: '',
+    header_color: '#100e75',
+    background_color: '#f0f0f0',
+    font_color: '#171717',
+    header_font_color: '#ffffff',
+    header_text_left: '',
+  },
+});
 
 const previewHtml = computed(() => {
   if (!previewCard.value) {
@@ -104,28 +125,6 @@ async function exportPdf() {
   }
 }
 
-function getSnippet(html: string, maxLength = 120): string {
-  if (!html) {
-    return '—';
-  }
-  const stripped = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!stripped) {
-    return '—';
-  }
-  return stripped.length > maxLength ? `${stripped.slice(0, maxLength)}…` : stripped;
-}
-
-function formatTimestamp(value?: string | number | Date | null): string {
-  if (!value) {
-    return '—';
-  }
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return String(value);
-  }
-}
-
 function openPreview(card: Flashcard) {
   previewCard.value = card;
   previewSide.value = 'front';
@@ -140,36 +139,78 @@ function closePreview() {
 function setPreviewSide(side: 'front' | 'back') {
   previewSide.value = side;
 }
+
+function openEditModal() {
+  if (!collection.value) {
+    return;
+  }
+  modalState.initial.title = collection.value.title;
+  modalState.initial.description = collection.value.description ?? '';
+  modalState.initial.header_color = collection.value.header_color ?? '#100e75';
+  modalState.initial.background_color = collection.value.background_color ?? '#f0f0f0';
+  modalState.initial.font_color = collection.value.font_color ?? '#171717';
+  modalState.initial.header_font_color = collection.value.header_font_color ?? '#ffffff';
+  modalState.initial.header_text_left = collection.value.header_text_left ?? '';
+  modalState.open = true;
+}
+
+function closeModal() {
+  modalState.open = false;
+}
+
+async function handleCollectionSubmit(payload: {
+  title: string;
+  description: string;
+  header_color: string;
+  background_color: string;
+  font_color: string;
+  header_font_color: string;
+  header_text_left: string;
+}) {
+  if (!collection.value) {
+    return;
+  }
+  modalState.loading = true;
+  try {
+    const updated = await collectionsApi.updateCollection(collection.value.id, {
+      title: payload.title,
+      description: payload.description || undefined,
+      header_color: payload.header_color,
+      background_color: payload.background_color,
+      font_color: payload.font_color,
+      header_font_color: payload.header_font_color,
+      header_text_left: payload.header_text_left || undefined,
+    });
+    collection.value = updated;
+    closeModal();
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Unable to update collection');
+  } finally {
+    modalState.loading = false;
+  }
+}
+
+async function removeCollection() {
+  if (!collection.value) {
+    return;
+  }
+  if (!window.confirm('Delete collection and all flashcards?')) {
+    return;
+  }
+  deletingCollection.value = true;
+  try {
+    await collectionsApi.deleteCollection(collection.value.id);
+    router.push({ name: 'collections' });
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Unable to delete collection');
+  } finally {
+    deletingCollection.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="space-y-6">
-    <button class="btn btn-ghost w-fit" type="button" @click="$router.back()">Back</button>
-
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 class="text-3xl font-semibold">{{ collection?.title || 'Collection' }}</h1>
-        <p class="text-base-content/70" v-if="collection?.description">{{ collection.description }}</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button class="btn btn-primary" type="button" @click="createCard">
-          New Flashcard
-        </button>
-        <button
-          class="btn btn-outline"
-          type="button"
-          @click="exportPdf"
-          :disabled="cards.length === 0 || exportingPdf"
-        >
-          <span
-            v-if="exportingPdf"
-            class="loading loading-spinner loading-xs mr-2"
-          ></span>
-          Export PDF
-        </button>
-      </div>
-    </div>
-
     <div v-if="error" class="alert alert-error">
       <span>{{ error }}</span>
     </div>
@@ -178,54 +219,38 @@ function setPreviewSide(side: 'front' | 'back') {
       <span class="loading loading-dots text-primary"></span>
     </div>
 
-    <div v-else-if="!cards.length" class="card bg-base-100 shadow">
-      <div class="card-body text-center text-base-content/70">
-        No flashcards yet. Create one to get started.
-      </div>
+    <div v-else-if="!error" class="space-y-4">
+      <CollectionMetaData :collection="collection" @edit="openEditModal" />
+
+      <CollectionCollapsibleMaterials />
+
+      <CollectionCollapsibleTools
+        :disabled="!collection || !cards.length || exportingPdf"
+        :loading="exportingPdf"
+        @download="exportPdf"
+      />
+
+      <CollectionCollapsibleFlashcards
+        :collection="collection"
+        :flashcards="cards"
+        :loading="loading"
+        @preview="openPreview"
+        @edit="openCard"
+        @delete="deleteCard"
+        @create="createCard"
+      />
+
+      <CollectionCollapsibleDangerZone :loading="deletingCollection" @remove="removeCollection" />
     </div>
 
-    <div v-else class="card bg-base-100 shadow">
-      <div class="card-body">
-        <div class="overflow-x-auto">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Front</th>
-                <th>Back</th>
-                <th>Updated</th>
-                <th class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="card in cards" :key="card.id">
-                <td class="align-top text-sm">
-                  {{ getSnippet(card.front) }}
-                </td>
-                <td class="align-top text-sm">
-                  {{ getSnippet(card.back) }}
-                </td>
-                <td class="align-top text-sm text-base-content/70">
-                  {{ formatTimestamp(card.updated_at) }}
-                </td>
-                <td class="align-top">
-                  <div class="flex flex-wrap justify-end gap-2">
-                    <button class="btn btn-sm btn-ghost" type="button" @click="openPreview(card)">
-                      Preview
-                    </button>
-                    <button class="btn btn-sm" type="button" @click="openCard(card.id)">
-                      Edit
-                    </button>
-                    <button class="btn btn-sm btn-error btn-outline" type="button" @click="deleteCard(card.id)">
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <CollectionEdit
+      :open="modalState.open"
+      mode="edit"
+      :initial-values="modalState.initial"
+      :loading="modalState.loading"
+      @close="closeModal"
+      @submit="handleCollectionSubmit"
+    />
 
     <dialog ref="previewModalRef" class="modal" @close="closePreview">
       <div class="modal-box max-w-4xl space-y-4">

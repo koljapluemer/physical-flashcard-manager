@@ -1,10 +1,10 @@
 .flashcard-preview-content {
   width: var(--card-width, auto);
   height: var(--card-height, auto);
-  padding: 1rem;
+  padding: calc(1rem * var(--card-scale, 1));
   overflow: hidden;
   font-family: "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
+  font-size: calc(14px * var(--card-scale, 1));
   line-height: 1.6;
   color: var(--font-color, #171717);
 }
