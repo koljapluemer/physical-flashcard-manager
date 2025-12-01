@@ -13,14 +13,21 @@ Vue 3 + TypeScript web application for creating, editing, and exporting mathemat
 - **Backend**: REST API (separate repository)
 - **PDF Generation**: External rendering service
 
-## Commands
+## Setup
 
 ```bash
 npm install
+git submodule add git@github.com:koljapluemer/physical-flashcard-doc.git doc 
+```
+
+- don't forget to create `.env` from `.env.example` on setup 
+
+## Useful Commands
+
+```bash
 npm run dev
 npm run build
 npm run lint
 ```
 
 - (should run via `just` in backend)
-- don't forget to create `.env` from `.env.example` on setup 
