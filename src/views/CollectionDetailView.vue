@@ -225,9 +225,12 @@ async function removeCollection() {
       <CollectionCollapsibleMaterials :collection="collection" />
 
       <CollectionCollapsibleTools
+        :collection="collection"
+        :flashcards="cards"
         :disabled="!collection || !cards.length || exportingPdf"
         :loading="exportingPdf"
         @download="exportPdf"
+        @created="loadData"
       />
 
       <CollectionCollapsibleFlashcards

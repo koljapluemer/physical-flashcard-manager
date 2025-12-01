@@ -17,6 +17,7 @@
     "@tiptap/vue-3": "^3.7.2",
     "katex": "^0.16.25",
     "lucide-vue-next": "^0.555.0",
+    "openai": "^4.77.4",
     "pinia": "^3.0.3",
     "tailwindcss": "^4.1.16",
     "vue": "^3.5.22",
