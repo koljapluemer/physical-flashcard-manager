@@ -222,7 +222,7 @@ async function removeCollection() {
     <div v-else-if="!error" class="space-y-4">
       <CollectionMetaData :collection="collection" @edit="openEditModal" />
 
-      <CollectionCollapsibleMaterials />
+      <CollectionCollapsibleMaterials :collection="collection" />
 
       <CollectionCollapsibleTools
         :disabled="!collection || !cards.length || exportingPdf"

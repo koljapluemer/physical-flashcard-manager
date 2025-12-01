@@ -20,3 +20,16 @@ export interface Flashcard {
   created_at: string;
   updated_at: string;
 }
+
+export interface Material {
+  id: string;
+  collectionId: number;
+  internalName: string;
+  originalFilename: string;
+  pageRangeStart: number;
+  pageRangeEnd: number;
+  pageCount: number;
+  file: Blob;
+  createdAt: string;
+  updatedAt: string;
+}
