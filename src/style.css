@@ -90,6 +90,18 @@ a {
   padding-left: 1.5rem;
 }
 
+.tiptap aside.flashcard-box {
+  background: var(--box-bg-color, color-mix(in srgb, var(--header-color, #100e75) 10%, transparent));
+  border: 1px solid var(--box-border-color, color-mix(in srgb, var(--header-color, #100e75) 18%, transparent));
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.tiptap aside.flashcard-box > :last-child {
+  margin-bottom: 0;
+}
+
 .tiptap-mathematics-render {
   display: inline-flex;
   align-items: center;

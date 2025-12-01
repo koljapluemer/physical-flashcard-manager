@@ -6,8 +6,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import type { Level } from '@tiptap/extension-heading';
 import katex from 'katex';
+import { Box } from '../editor/extensions/box';
 import { createMathExtension, sharedKatexOptions } from '../editor/extensions/math';
 import type { MathNodeClickHandler } from '../editor/extensions/math';
+import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { resizeImageToDataUrl } from '../utils/image';
 import CardPreview from '../components/CardPreview.vue';
 import * as collectionsApi from '../api/collections';
@@ -166,6 +168,15 @@ function handleMathModalKeydown(event: KeyboardEvent) {
 
 const isNew = computed(() => props.cardId === 'new');
 
+const editorThemeStyle = computed(() => {
+  const headerColor = normalizeHexColor(collection.value?.header_color);
+  return {
+    '--header-color': headerColor,
+    '--box-bg-color': hexToRgba(headerColor, 0.08),
+    '--box-border-color': hexToRgba(headerColor, 0.16),
+  };
+});
+
 function buildExtensions(side: EditorSide) {
   const handleInlineClick: MathNodeClickHandler = (node, pos) => {
     openMathModal({
@@ -194,6 +205,7 @@ function buildExtensions(side: EditorSide) {
       },
       codeBlock: false,
     }),
+    Box,
     Image.configure({
       inline: false,
     }),
@@ -372,7 +384,7 @@ function fillHeaderRight(text: string) {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :style="editorThemeStyle">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <button class="btn btn-ghost" type="button" @click="$router.back()">Back</button>
       <div class="text-right">
@@ -430,6 +442,14 @@ function fillHeaderRight(text: string) {
                 <button type="button" class="btn btn-xs" @click="toggleOrderedList(frontEditor)">Numbered</button>
                 <button type="button" class="btn btn-xs" @click="setHeading(frontEditor, headingLevel)">
                   Heading
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': frontEditor?.isActive('box') }"
+                  @click="frontEditor?.chain().focus().toggleBox().run()"
+                >
+                  Box
                 </button>
                 <button type="button" class="btn btn-xs" @click="startMathInsertion('front', 'inline')">
                   Inline Math
@@ -493,6 +513,14 @@ function fillHeaderRight(text: string) {
                 <button type="button" class="btn btn-xs" @click="toggleOrderedList(backEditor)">Numbered</button>
                 <button type="button" class="btn btn-xs" @click="setHeading(backEditor, headingLevel)">
                   Heading
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :class="{ 'btn-active': backEditor?.isActive('box') }"
+                  @click="backEditor?.chain().focus().toggleBox().run()"
+                >
+                  Box
                 </button>
                 <button type="button" class="btn btn-xs" @click="startMathInsertion('back', 'inline')">
                   Inline Math

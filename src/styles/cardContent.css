@@ -63,6 +63,18 @@
   color: #4a4a4a;
 }
 
+.flashcard-preview-content aside.flashcard-box {
+  background: var(--box-bg-color, color-mix(in srgb, var(--header-color, #100e75) 10%, transparent));
+  border: 1px solid var(--box-border-color, color-mix(in srgb, var(--header-color, #100e75) 18%, transparent));
+  border-radius: 10px;
+  padding: 0.9em 1em;
+  margin: 0 0 0.85em 0;
+}
+
+.flashcard-preview-content aside.flashcard-box > :last-child {
+  margin-bottom: 0;
+}
+
 .flashcard-preview-content .katex {
   font-size: 1.05em;
 }

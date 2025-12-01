@@ -1,5 +1,6 @@
 import cardContentCss from '../styles/cardContent.css?raw';
 import { renderMathHtml } from '../utils/math';
+import { hexToRgba, normalizeHexColor } from '../utils/color';
 import type { Collection, Flashcard } from '../types';
 
 interface RenderRequest {
@@ -12,7 +13,9 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
   const content = side === 'front' ? card.front : card.back;
   const renderedContent = renderMathHtml(content);
 
-  const headerColor = collection.header_color ?? '#100e75';
+  const headerColor = normalizeHexColor(collection.header_color);
+  const boxBgColor = hexToRgba(headerColor, 0.08);
+  const boxBorderColor = hexToRgba(headerColor, 0.16);
   const backgroundColor = collection.background_color ?? '#f0f0f0';
   const fontColor = collection.font_color ?? '#171717';
   const headerFontColor = collection.header_font_color ?? '#ffffff';
@@ -22,7 +25,22 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
   const showHeader = headerTextLeft || headerTextRight;
 
   return `
-    <div class="flashcard-page" style="background-color: ${backgroundColor}; width: 100%; height: 100%; display: flex; flex-direction: column;">
+    <div
+      class="flashcard-page"
+      style="
+        background-color: ${backgroundColor};
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        --header-color: ${headerColor};
+        --background-color: ${backgroundColor};
+        --font-color: ${fontColor};
+        --header-font-color: ${headerFontColor};
+        --box-bg-color: ${boxBgColor};
+        --box-border-color: ${boxBorderColor};
+      "
+    >
       ${showHeader ? `
         <div class="flashcard-header" style="background-color: ${headerColor}; color: ${headerFontColor}; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center;">
           ${headerTextLeft ? `<span style="flex-shrink: 0;">${headerTextLeft}</span>` : ''}

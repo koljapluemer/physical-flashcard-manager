@@ -2,6 +2,7 @@
 import { computed, withDefaults } from 'vue';
 import { useSettingsStore } from '../stores/settings';
 import { renderMathHtml } from '../utils/math';
+import { hexToRgba, normalizeHexColor } from '../utils/color';
 import type { Collection, Flashcard } from '../types';
 import '../styles/cardPreview.css';
 
@@ -32,15 +33,21 @@ const props = withDefaults(
 
 const settingsStore = useSettingsStore();
 
-const cardStyle = computed(() => ({
-  '--card-width': `${settingsStore.cardWidthMm * props.scale}mm`,
-  '--card-height': `${settingsStore.cardHeightMm * props.scale}mm`,
-  '--card-scale': `${props.scale}`,
-  '--header-color': props.collection?.header_color ?? '#100e75',
-  '--background-color': props.collection?.background_color ?? '#f0f0f0',
-  '--font-color': props.collection?.font_color ?? '#171717',
-  '--header-font-color': props.collection?.header_font_color ?? '#ffffff',
-}));
+const cardStyle = computed(() => {
+  const headerColor = normalizeHexColor(props.collection?.header_color);
+
+  return {
+    '--card-width': `${settingsStore.cardWidthMm * props.scale}mm`,
+    '--card-height': `${settingsStore.cardHeightMm * props.scale}mm`,
+    '--card-scale': `${props.scale}`,
+    '--header-color': headerColor,
+    '--background-color': props.collection?.background_color ?? '#f0f0f0',
+    '--font-color': props.collection?.font_color ?? '#171717',
+    '--header-font-color': props.collection?.header_font_color ?? '#ffffff',
+    '--box-bg-color': hexToRgba(headerColor, 0.08),
+    '--box-border-color': hexToRgba(headerColor, 0.16),
+  };
+});
 
 const resolvedSide = computed(() => (props.frontOnly ? 'front' : props.side));
 
