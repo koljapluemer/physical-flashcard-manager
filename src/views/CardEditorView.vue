@@ -12,6 +12,7 @@ import type { MathNodeClickHandler } from '../editor/extensions/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { resizeImageToDataUrl } from '../utils/image';
 import CardPreview from '../components/CardPreview.vue';
+import CardChatPane from '../components/CardChatPane.vue';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard } from '../types';
@@ -381,6 +382,18 @@ function insertImageFromPicker(editor: Editor | undefined, event: Event) {
 function fillHeaderRight(text: string) {
   headerRight.value = text;
 }
+
+function applyAiSuggestion(payload: { front: string; back: string; header_right?: string }) {
+  if (frontEditor.value) {
+    frontEditor.value.commands.setContent(payload.front, { emitUpdate: false });
+    frontHtml.value = payload.front;
+  }
+  if (backEditor.value) {
+    backEditor.value.commands.setContent(payload.back, { emitUpdate: false });
+    backHtml.value = payload.back;
+  }
+  headerRight.value = payload.header_right?.trim() || '';
+}
 </script>
 
 <template>
@@ -563,6 +576,14 @@ function fillHeaderRight(text: string) {
       </button>
       <button class="btn" type="button" @click="$router.back()">Cancel</button>
     </div>
+
+    <CardChatPane
+      :collection="collection"
+      :front-html="frontHtml"
+      :back-html="backHtml"
+      :header-right="headerRight"
+      @apply-suggestion="applyAiSuggestion"
+    />
 
     <dialog v-if="mathModal.open" class="modal modal-open" open>
       <div class="modal-box math-modal space-y-4">
