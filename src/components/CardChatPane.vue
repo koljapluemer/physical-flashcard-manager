@@ -247,7 +247,7 @@ function applyProposal(card: ProposedCard) {
       </div>
 
       <div v-if="canChat" class="space-y-3">
-        <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+        <div class="space-y-3 max-h-screen overflow-y-auto pr-1">
           <div
             v-for="message in messages"
             :key="message.id"
