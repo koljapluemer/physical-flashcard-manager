@@ -111,7 +111,7 @@ const previewCollection = computed<Collection>(() => ({
             {{ descriptionText }}
           </p>
         </div>
-        <button class="btn btn-sm btn-ghost" type="button" @click="handleClose">Close</button>
+        <button class="btn btn-sm " type="button" @click="handleClose">Close</button>
       </div>
 
       <div class="space-y-2">
@@ -193,7 +193,7 @@ const previewCollection = computed<Collection>(() => ({
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button class="btn btn-ghost" type="button" @click="handleClose">Cancel</button>
+        <button class="btn " type="button" @click="handleClose">Cancel</button>
         <button class="btn btn-primary" type="button" :disabled="loading" @click="handleSubmit">
           <span v-if="loading" class="loading loading-spinner loading-xs mr-2"></span>
           {{ mode === 'create' ? 'Create' : 'Save Changes' }}

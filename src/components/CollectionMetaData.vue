@@ -18,7 +18,7 @@ function handleEdit() {
 <template>
     <div class="space-y-3">
       <div class="flex items-center gap-3">
-        <button class="btn btn-square btn-ghost" type="button" aria-label="Edit collection" @click="handleEdit">
+        <button class="btn btn-square " type="button" aria-label="Edit collection" @click="handleEdit">
           <Pencil :size="20" />
         </button>
         <h1 class="text-3xl font-semibold">

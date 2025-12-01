@@ -90,7 +90,7 @@ function close() {
           <h3 class="text-xl font-semibold">Add material</h3>
           <p class="text-base-content/70">Upload a PDF and choose the page range to keep.</p>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" @click="close">Close</button>
+        <button class="btn  btn-sm" type="button" @click="close">Close</button>
       </div>
 
       <form class="grid gap-4 md:grid-cols-2" @submit.prevent="submitForm">
@@ -147,7 +147,7 @@ function close() {
         </fieldset>
 
         <div class="md:col-span-2 flex justify-end gap-2">
-          <button class="btn btn-ghost" type="button" @click="close" :disabled="formState.submitting">
+          <button class="btn " type="button" @click="close" :disabled="formState.submitting">
             Cancel
           </button>
           <button class="btn btn-primary" type="submit" :disabled="formState.submitting || !formState.file">

@@ -265,7 +265,7 @@ async function removeCollection() {
             </p>
           </div>
           <form method="dialog">
-            <button class="btn btn-sm btn-ghost" type="submit" @click="closePreview">Close</button>
+            <button class="btn btn-sm " type="submit" @click="closePreview">Close</button>
           </form>
         </div>
 

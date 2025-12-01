@@ -84,7 +84,7 @@ function getSnippet(html: string, maxLength = 90): string {
               </td>
               <td class="align-top">
                 <div class="flex justify-end gap-2">
-                  <button class="btn btn-square btn-ghost btn-sm" type="button" aria-label="Edit card"
+                  <button class="btn btn-square  btn-sm" type="button" aria-label="Edit card"
                     @click="emit('edit', card.id)">
                     <Pencil :size="16" />
                   </button>

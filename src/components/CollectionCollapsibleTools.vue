@@ -345,7 +345,7 @@ async function saveSelected() {
             Provide your OpenAI key, edit the prompt, and pick which generated cards to keep.
           </p>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" @click="closeAiModal" :disabled="generating || saving">
+        <button class="btn  btn-sm" type="button" @click="closeAiModal" :disabled="generating || saving">
           Close
         </button>
       </div>
@@ -426,7 +426,7 @@ async function saveSelected() {
       </div>
 
       <div class="flex justify-end gap-2">
-        <button class="btn btn-ghost" type="button" :disabled="generating || saving" @click="closeAiModal">
+        <button class="btn " type="button" :disabled="generating || saving" @click="closeAiModal">
           Cancel
         </button>
         <button

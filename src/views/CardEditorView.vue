@@ -386,7 +386,7 @@ function fillHeaderRight(text: string) {
 <template>
   <div class="space-y-6" :style="editorThemeStyle">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <button class="btn btn-ghost" type="button" @click="$router.back()">Back</button>
+      <button class="btn " type="button" @click="$router.back()">Back</button>
       <div class="text-right">
         <h1 class="text-3xl font-semibold">Flashcard Editor</h1>
         <p class="text-sm text-base-content/70">
@@ -575,7 +575,7 @@ function fillHeaderRight(text: string) {
               Enter LaTeX to render with KaTeX.
             </p>
           </div>
-          <button class="btn btn-sm btn-ghost" type="button" @click="closeMathModal">Close</button>
+          <button class="btn btn-sm " type="button" @click="closeMathModal">Close</button>
         </div>
         <fieldset class="fieldset">
           <legend class="fieldset-legend">LaTeX Expression</legend>
