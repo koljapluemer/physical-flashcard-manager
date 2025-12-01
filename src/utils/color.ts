@@ -12,7 +12,7 @@ export function normalizeHexColor(color?: string, fallback = DEFAULT_HEADER_COLO
   }
 
   const shortHexMatch = normalized.match(/^#([0-9a-fA-F]{3})$/);
-  if (shortHexMatch) {
+  if (shortHexMatch && shortHexMatch[1]) {
     const [r, g, b] = shortHexMatch[1].split('');
     normalized = `#${r}${r}${g}${g}${b}${b}`;
   }
