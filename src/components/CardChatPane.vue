@@ -14,11 +14,14 @@ type ProposedCard = {
   header_right?: string;
 };
 
+type ProposalStatus = 'pending' | 'accepted' | 'dismissed';
+
 type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   proposal?: ProposedCard;
+  proposalStatus?: ProposalStatus;
 };
 
 const props = defineProps<{
@@ -190,20 +193,44 @@ async function sendMessage() {
     }
 
     const parsedText = extractJson(content);
-    const parsed = JSON.parse(parsedText);
-    const replyText: string = parsed?.reply || 'Proposed changes ready.';
-    const card: ProposedCard | undefined = parsed?.card;
+
+    let parsed: any;
+    let replyText: string;
+    let card: ProposedCard | undefined;
+
+    try {
+      parsed = JSON.parse(parsedText);
+      replyText = parsed?.reply || 'Proposed changes ready.';
+      card = parsed?.card;
+    } catch (jsonError) {
+      // JSON parsing failed - log details for debugging
+      console.error('JSON Parse Error:', jsonError);
+      console.error('Attempted to parse:', parsedText.substring(0, 500)); // Log first 500 chars
+      console.error('Full AI response:', content);
+
+      // Try to extract at least the reply text from the raw content
+      replyText = 'AI response could not be parsed. The AI may have included invalid characters in the JSON.';
+
+      // Show a helpful error to the user
+      toastStore.push(
+        'AI returned malformed JSON. Try rephrasing your request or asking for simpler content.',
+        'error'
+      );
+
+      card = undefined;
+    }
 
     const assistantMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: replyText,
       proposal: card?.front_html && card?.back_html ? card : undefined,
+      proposalStatus: card?.front_html && card?.back_html ? 'pending' : undefined,
     };
 
     messages.value = [...messages.value, assistantMessage];
 
-    if (!assistantMessage.proposal) {
+    if (parsed && !assistantMessage.proposal) {
       toastStore.push('AI reply did not include a proposed card.', 'warning');
     }
   } catch (err) {
@@ -214,12 +241,20 @@ async function sendMessage() {
   }
 }
 
-function applyProposal(card: ProposedCard) {
+function applyProposal(message: ChatMessage) {
+  if (!message.proposal) return;
+
   emit('applySuggestion', {
-    front: card.front_html,
-    back: card.back_html,
-    header_right: card.header_right,
+    front: message.proposal.front_html,
+    back: message.proposal.back_html,
+    header_right: message.proposal.header_right,
   });
+
+  message.proposalStatus = 'accepted';
+}
+
+function dismissProposal(message: ChatMessage) {
+  message.proposalStatus = 'dismissed';
 }
 </script>
 
@@ -266,7 +301,7 @@ function applyProposal(card: ProposedCard) {
             </div>
             <p class="whitespace-pre-line">{{ message.content }}</p>
 
-            <div v-if="message.proposal" class="mt-3 space-y-3">
+            <div v-if="message.proposal && message.proposalStatus === 'pending'" class="mt-3 space-y-3">
               <div class="grid gap-3 md:grid-cols-2">
                 <div class="rounded border border-base-300 p-2">
                   <p class="font-medium mb-2">Front</p>
@@ -289,18 +324,32 @@ function applyProposal(card: ProposedCard) {
                 </div>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button class="btn btn-primary gap-2" type="button" @click="applyProposal(message.proposal)">
+                <button class="btn btn-primary gap-2" type="button" @click="applyProposal(message)">
                   <Check class="h-4 w-4" />
                   <span>Accept changes</span>
                 </button>
                 <button
                   class="btn btn-outline gap-2"
                   type="button"
-                  @click="message.proposal = undefined"
+                  @click="dismissProposal(message)"
                 >
                   <X class="h-4 w-4" />
                   <span>Dismiss</span>
                 </button>
+              </div>
+            </div>
+
+            <div v-else-if="message.proposalStatus === 'accepted'" class="mt-3">
+              <div class="alert alert-success">
+                <Check class="h-5 w-5" />
+                <span>Changes accepted</span>
+              </div>
+            </div>
+
+            <div v-else-if="message.proposalStatus === 'dismissed'" class="mt-3">
+              <div class="alert">
+                <X class="h-5 w-5" />
+                <span>Proposal dismissed</span>
               </div>
             </div>
           </div>
