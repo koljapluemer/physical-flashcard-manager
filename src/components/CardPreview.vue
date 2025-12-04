@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, withDefaults } from 'vue';
+import { computed, watch, withDefaults } from 'vue';
 import { useSettingsStore } from '../stores/settings';
 import { renderMathHtml } from '../utils/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
+import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
 import type { Collection, Flashcard } from '../types';
 import '../styles/cardPreview.css';
 
@@ -33,17 +34,30 @@ const props = withDefaults(
 
 const settingsStore = useSettingsStore();
 
+watch(
+  () => props.collection?.font_family,
+  (fontFamily) => {
+    if (fontFamily) {
+      loadGoogleFont(fontFamily);
+    }
+  },
+  { immediate: true }
+);
+
 const cardStyle = computed(() => {
   const headerColor = normalizeHexColor(props.collection?.header_color);
+  const widthMm = parseFloat(props.collection?.width_mm ?? String(settingsStore.cardWidthMm));
+  const heightMm = parseFloat(props.collection?.height_mm ?? String(settingsStore.cardHeightMm));
 
   return {
-    '--card-width': `${settingsStore.cardWidthMm * props.scale}mm`,
-    '--card-height': `${settingsStore.cardHeightMm * props.scale}mm`,
+    '--card-width': `${widthMm * props.scale}mm`,
+    '--card-height': `${heightMm * props.scale}mm`,
     '--card-scale': `${props.scale}`,
     '--header-color': headerColor,
     '--background-color': props.collection?.background_color ?? '#f0f0f0',
     '--font-color': props.collection?.font_color ?? '#171717',
     '--header-font-color': props.collection?.header_font_color ?? '#ffffff',
+    '--font-family': getFontCSSValue(props.collection?.font_family ?? 'Arial'),
     '--box-bg-color': hexToRgba(headerColor, 0.08),
     '--box-border-color': hexToRgba(headerColor, 0.16),
   };

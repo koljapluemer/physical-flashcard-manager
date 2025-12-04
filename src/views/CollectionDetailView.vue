@@ -5,7 +5,6 @@ import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
 import * as renderApi from '../api/render';
 import { downloadPdfBlob, generatePdfFilename } from '../utils/pdfExport';
-import { useSettingsStore } from '../stores/settings';
 import CardPreview from '../components/CardPreview.vue';
 import CollectionEdit from '../components/CollectionEdit.vue';
 import CollectionMetaData from '../components/CollectionMetaData.vue';
@@ -20,7 +19,6 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const settingsStore = useSettingsStore();
 
 const collection = ref<Collection | null>(null);
 const cards = ref<Flashcard[]>([]);
@@ -38,6 +36,9 @@ const modalState = reactive({
   initial: {
     title: '',
     description: '',
+    width_mm: '148.5',
+    height_mm: '105',
+    font_family: 'Arial',
     header_color: '#100e75',
     background_color: '#f0f0f0',
     font_color: '#171717',
@@ -113,8 +114,8 @@ async function exportPdf() {
     const blob = await renderApi.exportCollectionToPdf(
       collection.value,
       cards.value,
-      settingsStore.cardWidthMm,
-      settingsStore.cardHeightMm
+      parseFloat(collection.value.width_mm ?? '148.5'),
+      parseFloat(collection.value.height_mm ?? '105')
     );
     const filename = generatePdfFilename(collection.value.title);
     downloadPdfBlob(blob, filename);
@@ -146,6 +147,9 @@ function openEditModal() {
   }
   modalState.initial.title = collection.value.title;
   modalState.initial.description = collection.value.description ?? '';
+  modalState.initial.width_mm = collection.value.width_mm ?? '148.5';
+  modalState.initial.height_mm = collection.value.height_mm ?? '105';
+  modalState.initial.font_family = collection.value.font_family ?? 'Arial';
   modalState.initial.header_color = collection.value.header_color ?? '#100e75';
   modalState.initial.background_color = collection.value.background_color ?? '#f0f0f0';
   modalState.initial.font_color = collection.value.font_color ?? '#171717';
@@ -161,6 +165,9 @@ function closeModal() {
 async function handleCollectionSubmit(payload: {
   title: string;
   description: string;
+  width_mm: string;
+  height_mm: string;
+  font_family: string;
   header_color: string;
   background_color: string;
   font_color: string;
@@ -175,6 +182,9 @@ async function handleCollectionSubmit(payload: {
     const updated = await collectionsApi.updateCollection(collection.value.id, {
       title: payload.title,
       description: payload.description || undefined,
+      width_mm: payload.width_mm,
+      height_mm: payload.height_mm,
+      font_family: payload.font_family,
       header_color: payload.header_color,
       background_color: payload.background_color,
       font_color: payload.font_color,

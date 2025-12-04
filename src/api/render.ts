@@ -1,6 +1,7 @@
 import cardContentCss from '../styles/cardContent.css?raw';
 import { renderMathHtml } from '../utils/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
+import { getFontCSSValue, isSystemFont } from '../utils/fonts';
 import type { Collection, Flashcard } from '../types';
 
 interface RenderRequest {
@@ -19,6 +20,7 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
   const backgroundColor = collection.background_color ?? '#f0f0f0';
   const fontColor = collection.font_color ?? '#171717';
   const headerFontColor = collection.header_font_color ?? '#ffffff';
+  const fontFamily = getFontCSSValue(collection.font_family ?? 'Arial');
   const headerTextLeft = collection.header_text_left ?? '';
   const headerTextRight = side === 'front' ? (card.header_right ?? '') : '';
 
@@ -37,6 +39,7 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
         --background-color: ${backgroundColor};
         --font-color: ${fontColor};
         --header-font-color: ${headerFontColor};
+        --font-family: ${fontFamily};
         --box-bg-color: ${boxBgColor};
         --box-border-color: ${boxBorderColor};
       "
@@ -54,8 +57,15 @@ function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: 
   `;
 }
 
-function buildHeadHtml(): string {
+function buildHeadHtml(fontFamily?: string): string {
+  const fontLink = fontFamily && !isSystemFont(fontFamily)
+    ? `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontFamily.replace(/\s+/g, '+')}:wght@400;600;700&display=swap" />`
+    : '';
+
+  const fontCss = getFontCSSValue(fontFamily ?? 'Arial');
+
   return `
+    ${fontLink}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
     <style>
       :root {
@@ -65,7 +75,7 @@ function buildHeadHtml(): string {
       html, body {
         margin: 0;
         padding: 0;
-        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-family: ${fontCss};
         background: #fff;
         height: 100%;
       }
@@ -111,7 +121,7 @@ export async function exportCollectionToPdf(
 
   const requestBody: RenderRequest = {
     pages,
-    headHtml: buildHeadHtml(),
+    headHtml: buildHeadHtml(collection.font_family),
     pageSize: [cardWidthMm, cardHeightMm],
   };
 

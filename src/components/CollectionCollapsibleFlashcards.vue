@@ -63,7 +63,7 @@ function getSnippet(html: string, maxLength = 90): string {
               <td class="align-top">
                 <button
                   type="button"
-                  class="transition-hover hover:shadow-md"
+                  class="transition hover:scale-[1.02] cursor-pointer"
                   @click="emit('preview', card)"
                 >
                   <CardPreview

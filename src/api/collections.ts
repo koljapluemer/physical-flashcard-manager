@@ -12,6 +12,9 @@ export async function getCollection(id: number): Promise<Collection> {
 export async function createCollection(data: {
   title: string;
   description?: string;
+  width_mm?: string;
+  height_mm?: string;
+  font_family?: string;
   header_color?: string;
   background_color?: string;
   font_color?: string;
@@ -29,6 +32,9 @@ export async function updateCollection(
   data: Partial<{
     title: string;
     description?: string;
+    width_mm?: string;
+    height_mm?: string;
+    font_family?: string;
     header_color?: string;
     background_color?: string;
     font_color?: string;

@@ -2,6 +2,9 @@ export interface Collection {
   id: number;
   title: string;
   description?: string;
+  width_mm?: string;
+  height_mm?: string;
+  font_family?: string;
   header_color?: string;
   background_color?: string;
   font_color?: string;

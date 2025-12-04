@@ -11,6 +11,7 @@ import { createMathExtension, sharedKatexOptions } from '../editor/extensions/ma
 import type { MathNodeClickHandler } from '../editor/extensions/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { resizeImageToDataUrl } from '../utils/image';
+import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
 import CardPreview from '../components/CardPreview.vue';
 import CardChatPane from '../components/CardChatPane.vue';
 import * as collectionsApi from '../api/collections';
@@ -175,8 +176,19 @@ const editorThemeStyle = computed(() => {
     '--header-color': headerColor,
     '--box-bg-color': hexToRgba(headerColor, 0.08),
     '--box-border-color': hexToRgba(headerColor, 0.16),
+    '--font-family': getFontCSSValue(collection.value?.font_family ?? 'Arial'),
   };
 });
+
+watch(
+  () => collection.value?.font_family,
+  (fontFamily) => {
+    if (fontFamily) {
+      loadGoogleFont(fontFamily);
+    }
+  },
+  { immediate: true }
+);
 
 function buildExtensions(side: EditorSide) {
   const handleInlineClick: MathNodeClickHandler = (node, pos) => {

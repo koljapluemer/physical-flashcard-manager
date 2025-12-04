@@ -3,7 +3,14 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as collectionsApi from '../api/collections';
 import CollectionEdit from '../components/CollectionEdit.vue';
+import CardPreview from '../components/CardPreview.vue';
 import type { Collection } from '../types';
+
+function formatDimensions(collection: Collection): string {
+  const width = parseFloat(collection.width_mm ?? '0');
+  const height = parseFloat(collection.height_mm ?? '0');
+  return `${width} × ${height} mm`;
+}
 
 const router = useRouter();
 
@@ -17,6 +24,9 @@ const modalState = reactive({
   initial: {
     title: '',
     description: '',
+    width_mm: '148.5',
+    height_mm: '105',
+    font_family: 'Arial',
     header_color: '#100e75',
     background_color: '#f0f0f0',
     font_color: '#171717',
@@ -47,6 +57,9 @@ function openCollection(id: number) {
 function openCreateModal() {
   modalState.initial.title = '';
   modalState.initial.description = '';
+  modalState.initial.width_mm = '148.5';
+  modalState.initial.height_mm = '105';
+  modalState.initial.font_family = 'Arial';
   modalState.initial.header_color = '#100e75';
   modalState.initial.background_color = '#f0f0f0';
   modalState.initial.font_color = '#171717';
@@ -62,6 +75,9 @@ function closeModal() {
 async function handleCollectionSubmit(payload: {
   title: string;
   description: string;
+  width_mm: string;
+  height_mm: string;
+  font_family: string;
   header_color: string;
   background_color: string;
   font_color: string;
@@ -78,6 +94,9 @@ async function handleCollectionSubmit(payload: {
     await collectionsApi.createCollection({
       title: payload.title,
       description: payload.description || undefined,
+      width_mm: payload.width_mm,
+      height_mm: payload.height_mm,
+      font_family: payload.font_family,
       header_color: payload.header_color,
       background_color: payload.background_color,
       font_color: payload.font_color,
@@ -121,16 +140,30 @@ onMounted(() => {
           <table class="table table-zebra">
             <thead>
               <tr>
+                <th>Preview</th>
                 <th>Title</th>
+                <th>Format</th>
                 <th>Description</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="collection in collections" :key="collection.id">
+                <td class="align-top">
+                  <CardPreview
+                    :collection="collection"
+                    side="front"
+                    :front-only="true"
+                    :use-demo-values="true"
+                    :scale="0.3"
+                  />
+                </td>
                 <td class="align-top font-semibold">
                   <button class="btn btn-link px-0 normal-case" type="button" @click="openCollection(collection.id)">
                     {{ collection.title }}
                   </button>
+                </td>
+                <td class="align-top text-sm text-base-content/80">
+                  {{ formatDimensions(collection) }}
                 </td>
                 <td class="align-top text-sm text-base-content/80">
                   {{ collection.description || '—' }}

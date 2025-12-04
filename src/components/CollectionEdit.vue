@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import CardPreview from './CardPreview.vue';
+import { GOOGLE_FONTS } from '../utils/fonts';
 import type { Collection } from '../types';
 
 const props = defineProps<{
@@ -9,6 +10,9 @@ const props = defineProps<{
   initialValues: {
     title: string;
     description?: string;
+    width_mm?: string;
+    height_mm?: string;
+    font_family?: string;
     header_color?: string;
     background_color?: string;
     font_color?: string;
@@ -23,6 +27,9 @@ const emit = defineEmits<{
   (e: 'submit', payload: {
     title: string;
     description: string;
+    width_mm: string;
+    height_mm: string;
+    font_family: string;
     header_color: string;
     background_color: string;
     font_color: string;
@@ -31,9 +38,23 @@ const emit = defineEmits<{
   }): void;
 }>();
 
+interface DimensionPreset {
+  label: string;
+  width_mm: string;
+  height_mm: string;
+}
+
+const dimensionPresets: DimensionPreset[] = [
+  { label: 'wirmachendruck Business Card', width_mm: '85', height_mm: '55' },
+  { label: 'wirmachendruck DINA6 Postcard', width_mm: '148', height_mm: '105' },
+];
+
 const form = reactive({
   title: '',
   description: '',
+  width_mm: '148',
+  height_mm: '105',
+  font_family: 'Arial',
   header_color: '#100e75',
   background_color: '#f0f0f0',
   font_color: '#171717',
@@ -41,21 +62,61 @@ const form = reactive({
   header_text_left: '',
 });
 
+const selectedPresetIndex = ref<number | null>(0);
+const customWidth = ref('148');
+const customHeight = ref('105');
+
 watch(
   () => [props.open, props.initialValues],
   () => {
     if (props.open) {
       form.title = props.initialValues.title ?? '';
       form.description = props.initialValues.description ?? '';
+      form.width_mm = props.initialValues.width_mm ?? '148.5';
+      form.height_mm = props.initialValues.height_mm ?? '105';
+      form.font_family = props.initialValues.font_family ?? 'Arial';
       form.header_color = props.initialValues.header_color ?? '#100e75';
       form.background_color = props.initialValues.background_color ?? '#f0f0f0';
       form.font_color = props.initialValues.font_color ?? '#171717';
       form.header_font_color = props.initialValues.header_font_color ?? '#ffffff';
       form.header_text_left = props.initialValues.header_text_left ?? '';
+
+      const presetIndex = dimensionPresets.findIndex(
+        (preset) => preset.width_mm === form.width_mm && preset.height_mm === form.height_mm
+      );
+      if (presetIndex !== -1) {
+        selectedPresetIndex.value = presetIndex;
+      } else {
+        selectedPresetIndex.value = null;
+        customWidth.value = form.width_mm;
+        customHeight.value = form.height_mm;
+      }
     }
   },
   { immediate: true }
 );
+
+function selectPreset(index: number) {
+  selectedPresetIndex.value = index;
+  const preset = dimensionPresets[index];
+  if (preset) {
+    form.width_mm = preset.width_mm;
+    form.height_mm = preset.height_mm;
+  }
+}
+
+function selectCustom() {
+  selectedPresetIndex.value = null;
+  form.width_mm = customWidth.value;
+  form.height_mm = customHeight.value;
+}
+
+watch([customWidth, customHeight], () => {
+  if (selectedPresetIndex.value === null) {
+    form.width_mm = customWidth.value;
+    form.height_mm = customHeight.value;
+  }
+});
 
 function handleClose() {
   emit('close');
@@ -69,6 +130,9 @@ function handleSubmit() {
   emit('submit', {
     title: form.title.trim(),
     description: form.description.trim(),
+    width_mm: form.width_mm,
+    height_mm: form.height_mm,
+    font_family: form.font_family,
     header_color: form.header_color,
     background_color: form.background_color,
     font_color: form.font_color,
@@ -91,6 +155,9 @@ const previewCollection = computed<Collection>(() => ({
   id: 0,
   title: form.title || 'Sample Collection',
   description: form.description,
+  width_mm: form.width_mm,
+  height_mm: form.height_mm,
+  font_family: form.font_family,
   header_color: form.header_color,
   background_color: form.background_color,
   font_color: form.font_color,
@@ -143,6 +210,74 @@ const previewCollection = computed<Collection>(() => ({
             class="textarea textarea-bordered w-full"
             placeholder="Optional description"
           ></textarea>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Card Dimensions</legend>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <tbody>
+                <tr v-for="(preset, index) in dimensionPresets" :key="index" class="hover">
+                  <td class="w-12">
+                    <input
+                      type="radio"
+                      :name="'dimension-preset'"
+                      :checked="selectedPresetIndex === index"
+                      @change="selectPreset(index)"
+                      class="radio radio-sm"
+                    />
+                  </td>
+                  <td>{{ preset.label }}</td>
+                  <td class="text-right">{{ preset.width_mm }} × {{ preset.height_mm }} mm</td>
+                </tr>
+                <tr class="hover">
+                  <td class="w-12">
+                    <input
+                      type="radio"
+                      :name="'dimension-preset'"
+                      :checked="selectedPresetIndex === null"
+                      @change="selectCustom"
+                      class="radio radio-sm"
+                    />
+                  </td>
+                  <td>Custom:</td>
+                  <td class="text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                      <input
+                        v-model="customWidth"
+                        type="number"
+                        step="0.1"
+                        min="10"
+                        class="input input-bordered input-sm w-20"
+                        :disabled="selectedPresetIndex !== null"
+                        @focus="selectCustom"
+                      />
+                      <span>×</span>
+                      <input
+                        v-model="customHeight"
+                        type="number"
+                        step="0.1"
+                        min="10"
+                        class="input input-bordered input-sm w-20"
+                        :disabled="selectedPresetIndex !== null"
+                        @focus="selectCustom"
+                      />
+                      <span>mm</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Font Family</legend>
+          <select v-model="form.font_family" class="select select-bordered w-full">
+            <option v-for="font in GOOGLE_FONTS" :key="font.name" :value="font.name">
+              {{ font.displayName }}
+            </option>
+          </select>
         </fieldset>
 
         <fieldset class="fieldset">
