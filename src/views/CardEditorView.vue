@@ -10,6 +10,7 @@ import { MathExtensionConfigured, MathSelectionCommands } from '../editor/extens
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { resizeImageToDataUrl } from '../utils/image';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
+import { preprocessMathInHtml } from '../utils/mathPreprocessor';
 import CardPreview from '../components/CardPreview.vue';
 import CardChatPane from '../components/CardChatPane.vue';
 import * as collectionsApi from '../api/collections';
@@ -232,13 +233,17 @@ function fillHeaderRight(text: string) {
 }
 
 function applyAiSuggestion(payload: { front: string; back: string; header_right?: string }) {
+  // Pre-process HTML to convert $...$ patterns to proper math nodes
+  const processedFront = preprocessMathInHtml(payload.front);
+  const processedBack = preprocessMathInHtml(payload.back);
+
   if (frontEditor.value) {
-    frontEditor.value.commands.setContent(payload.front, { emitUpdate: false });
-    frontHtml.value = payload.front;
+    frontEditor.value.commands.setContent(processedFront, { emitUpdate: false });
+    frontHtml.value = processedFront;
   }
   if (backEditor.value) {
-    backEditor.value.commands.setContent(payload.back, { emitUpdate: false });
-    backHtml.value = payload.back;
+    backEditor.value.commands.setContent(processedBack, { emitUpdate: false });
+    backHtml.value = processedBack;
   }
   headerRight.value = payload.header_right?.trim() || '';
 }
