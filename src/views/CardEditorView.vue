@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { EditorContent, useEditor, type Editor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import type { Level } from '@tiptap/extension-heading';
-import katex from 'katex';
 import { Box } from '../editor/extensions/box';
-import { createMathExtension, sharedKatexOptions } from '../editor/extensions/math';
-import type { MathNodeClickHandler } from '../editor/extensions/math';
+import { MathExtensionConfigured, MathSelectionCommands } from '../editor/extensions/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { resizeImageToDataUrl } from '../utils/image';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
@@ -33,141 +31,6 @@ const backHtml = ref('');
 const headerRight = ref('');
 const headingLevel: Level = 3;
 
-type EditorSide = 'front' | 'back';
-type MathMode = 'inline' | 'block';
-
-interface MathModalState {
-  open: boolean;
-  mode: MathMode;
-  latex: string;
-  side: EditorSide;
-  pos: number | null;
-  isEditing: boolean;
-}
-
-const mathModal = reactive<MathModalState>({
-  open: false,
-  mode: 'inline',
-  latex: '',
-  side: 'front',
-  pos: null,
-  isEditing: false,
-});
-
-const mathTextareaRef = ref<HTMLTextAreaElement | null>(null);
-const mathModalError = ref<string | null>(null);
-
-const mathPreview = computed<{ html: string; error: string | null }>(() => {
-  const expression = mathModal.latex.trim();
-
-  if (!expression) {
-    return { html: '', error: null };
-  }
-
-  try {
-    const html = katex.renderToString(expression, {
-      ...sharedKatexOptions,
-      displayMode: mathModal.mode === 'block',
-    });
-    return { html, error: null };
-  } catch (error) {
-    return {
-      html: '',
-      error: error instanceof Error ? error.message : 'Unable to render expression',
-    };
-  }
-});
-
-interface OpenMathModalOptions {
-  side: EditorSide;
-  mode: MathMode;
-  latex: string;
-  pos?: number | null;
-  isEditing: boolean;
-}
-
-function resetMathModal() {
-  mathModal.latex = '';
-  mathModal.pos = null;
-  mathModal.isEditing = false;
-  mathModalError.value = null;
-}
-
-function closeMathModal() {
-  mathModal.open = false;
-  resetMathModal();
-}
-
-function openMathModal(options: OpenMathModalOptions) {
-  mathModal.side = options.side;
-  mathModal.mode = options.mode;
-  mathModal.latex = options.latex;
-  mathModal.pos = options.pos ?? null;
-  mathModal.isEditing = options.isEditing;
-  mathModal.open = true;
-  mathModalError.value = null;
-
-  nextTick(() => {
-    mathTextareaRef.value?.focus();
-    mathTextareaRef.value?.setSelectionRange(mathModal.latex.length, mathModal.latex.length);
-  });
-}
-
-function startMathInsertion(side: EditorSide, mode: MathMode) {
-  openMathModal({
-    side,
-    mode,
-    latex: '',
-    pos: null,
-    isEditing: false,
-  });
-}
-
-function getEditorBySide(side: EditorSide) {
-  return side === 'front' ? frontEditor.value : backEditor.value;
-}
-
-function saveMathModal() {
-  const editor = getEditorBySide(mathModal.side);
-  if (!editor) {
-    return;
-  }
-
-  const latex = mathModal.latex.trim();
-  if (!latex) {
-    mathModalError.value = 'Enter a LaTeX expression to continue.';
-    return;
-  }
-
-  mathModalError.value = null;
-
-  const pos = mathModal.pos ?? undefined;
-  let chain = editor.chain().focus();
-
-  if (mathModal.mode === 'inline') {
-    if (mathModal.isEditing && pos !== undefined) {
-      chain = chain.updateInlineMath({ latex, pos });
-    } else {
-      chain = chain.insertInlineMath({ latex });
-    }
-  } else if (mathModal.isEditing && pos !== undefined) {
-    chain = chain.updateBlockMath({ latex, pos });
-  } else {
-    chain = chain.insertBlockMath({ latex });
-  }
-
-  if (chain.run()) {
-    closeMathModal();
-  }
-}
-
-function handleMathModalKeydown(event: KeyboardEvent) {
-  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-    event.preventDefault();
-    saveMathModal();
-  }
-}
-
 const isNew = computed(() => props.cardId === 'new');
 
 const editorThemeStyle = computed(() => {
@@ -190,47 +53,20 @@ watch(
   { immediate: true }
 );
 
-function buildExtensions(side: EditorSide) {
-  const handleInlineClick: MathNodeClickHandler = (node, pos) => {
-    openMathModal({
-      side,
-      mode: 'inline',
-      latex: (node.attrs.latex as string) || '',
-      pos,
-      isEditing: true,
-    });
-  };
-
-  const handleBlockClick: MathNodeClickHandler = (node, pos) => {
-    openMathModal({
-      side,
-      mode: 'block',
-      latex: (node.attrs.latex as string) || '',
-      pos,
-      isEditing: true,
-    });
-  };
-
-  return [
-    StarterKit.configure({
-      heading: {
-        levels: [2, 3, 4],
-      },
-      codeBlock: false,
-    }),
-    Box,
-    Image.configure({
-      inline: false,
-    }),
-    createMathExtension({
-      onInlineClick: handleInlineClick,
-      onBlockClick: handleBlockClick,
-    }),
-  ];
-}
-
-const frontExtensions = buildExtensions('front');
-const backExtensions = buildExtensions('back');
+const editorExtensions = [
+  StarterKit.configure({
+    heading: {
+      levels: [2, 3, 4],
+    },
+    codeBlock: false,
+  }),
+  Box,
+  Image.configure({
+    inline: false,
+  }),
+  MathExtensionConfigured,
+  MathSelectionCommands,
+];
 
 function handleImageEvent(event: ClipboardEvent | DragEvent, editor: Editor | undefined) {
   const transfer = 'clipboardData' in event ? event.clipboardData : event.dataTransfer;
@@ -262,7 +98,7 @@ async function insertResizedImages(files: File[], editor: Editor) {
 
 const frontEditor = useEditor({
   content: '',
-  extensions: frontExtensions,
+  extensions: editorExtensions,
   editorProps: {
     handlePaste: (_view, event) => handleImageEvent(event, frontEditor.value),
     handleDrop: (_view, event) => handleImageEvent(event, frontEditor.value),
@@ -274,7 +110,7 @@ const frontEditor = useEditor({
 
 const backEditor = useEditor({
   content: '',
-  extensions: backExtensions,
+  extensions: editorExtensions,
   editorProps: {
     handlePaste: (_view, event) => handleImageEvent(event, backEditor.value),
     handleDrop: (_view, event) => handleImageEvent(event, backEditor.value),
@@ -476,11 +312,14 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
                 >
                   Box
                 </button>
-                <button type="button" class="btn btn-xs" @click="startMathInsertion('front', 'inline')">
-                  Inline Math
-                </button>
-                <button type="button" class="btn btn-xs" @click="startMathInsertion('front', 'block')">
-                  Block Math
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :disabled="frontEditor?.state.selection.empty"
+                  @click="frontEditor?.commands.selectionToInlineMath()"
+                  title="Convert selected text to math (Ctrl+Shift+M). Or just type $...$"
+                >
+                  Selection → Math
                 </button>
                 <label class="btn btn-xs">
                   Image
@@ -547,11 +386,14 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
                 >
                   Box
                 </button>
-                <button type="button" class="btn btn-xs" @click="startMathInsertion('back', 'inline')">
-                  Inline Math
-                </button>
-                <button type="button" class="btn btn-xs" @click="startMathInsertion('back', 'block')">
-                  Block Math
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  :disabled="backEditor?.state.selection.empty"
+                  @click="backEditor?.commands.selectionToInlineMath()"
+                  title="Convert selected text to math (Ctrl+Shift+M). Or just type $...$"
+                >
+                  Selection → Math
                 </button>
                 <label class="btn btn-xs">
                   Image
@@ -596,50 +438,5 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
       :header-right="headerRight"
       @apply-suggestion="applyAiSuggestion"
     />
-
-    <dialog v-if="mathModal.open" class="modal modal-open" open>
-      <div class="modal-box math-modal space-y-4">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <h3 class="text-xl font-semibold">
-              {{ mathModal.isEditing ? 'Edit' : 'Insert' }} {{ mathModal.mode === 'inline' ? 'Inline' : 'Block' }} Math
-            </h3>
-            <p class="text-sm text-base-content/70">
-              Enter LaTeX to render with KaTeX.
-            </p>
-          </div>
-          <button class="btn btn-sm " type="button" @click="closeMathModal">Close</button>
-        </div>
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">LaTeX Expression</legend>
-          <textarea
-            id="math-expression"
-            ref="mathTextareaRef"
-            class="textarea textarea-bordered"
-            :rows="mathModal.mode === 'block' ? 5 : 3"
-            placeholder="Enter LaTeX, e.g. \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
-            v-model="mathModal.latex"
-            @keydown="handleMathModalKeydown"
-          ></textarea>
-        </fieldset>
-        <p v-if="mathModalError" class="text-sm text-error">
-          {{ mathModalError }}
-        </p>
-        <div v-if="mathModal.latex.trim().length" class="math-modal-preview">
-          <p class="text-xs text-base-content/60 mb-2">Live preview (KaTeX)</p>
-          <div v-if="mathPreview.html" v-html="mathPreview.html"></div>
-          <p v-else class="text-error text-sm">{{ mathPreview.error }}</p>
-        </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button class="btn btn-primary" type="button" @click="saveMathModal">
-            {{ mathModal.isEditing ? 'Update Math' : 'Insert Math' }}
-          </button>
-          <button class="btn" type="button" @click="closeMathModal">Cancel</button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button @click="closeMathModal">close</button>
-      </form>
-    </dialog>
   </div>
 </template>

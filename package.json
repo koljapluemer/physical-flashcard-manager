@@ -10,6 +10,7 @@
     "lint": "eslint src --ext .ts,.vue"
   },
   "dependencies": {
+    "@aarkue/tiptap-math-extension": "^1.4.0",
     "@tailwindcss/vite": "^4.1.16",
     "@tiptap/extension-image": "^3.7.2",
     "@tiptap/extension-mathematics": "^3.8.0",

@@ -13,7 +13,7 @@ export function renderMathHtml(html: string): string {
   const container = document.createElement('div');
   container.innerHTML = html;
 
-  const mathNodes = container.querySelectorAll<HTMLElement>('[data-type="inline-math"], [data-type="block-math"]');
+  const mathNodes = container.querySelectorAll<HTMLElement>('[data-type="inlineMath"]');
 
   mathNodes.forEach((element) => {
     const latex = element.getAttribute('data-latex') ?? '';
@@ -21,7 +21,7 @@ export function renderMathHtml(html: string): string {
       return;
     }
 
-    const displayMode = element.getAttribute('data-type') === 'block-math';
+    const displayMode = element.getAttribute('data-display') === 'yes';
 
     try {
       element.innerHTML = katex.renderToString(latex, {

@@ -125,7 +125,11 @@ function buildMessages(prompt: string) {
     '- Use simple tags only: <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>, <h2>, <h3>, <code>, <pre>, <blockquote>, <br>.',
     '- No inline styles, links, scripts, iframes, media, or external assets.',
     '- Keep answers concise and readable on a small physical card.',
-    'Use LaTeX for math when helpful.',
+    'Math notation:',
+    '- For inline math, wrap LaTeX in single dollar signs: $E = mc^2$',
+    '- The editor will automatically render $...$ patterns as math.',
+    '- Example: "<p>The energy is $E = mc^2$ where $c$ is the speed of light.</p>"',
+    '- Do NOT use \\( \\), \\[ \\], or other LaTeX delimiters.',
   ].join('\n');
 
   return [

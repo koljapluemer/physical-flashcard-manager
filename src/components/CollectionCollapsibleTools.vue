@@ -192,6 +192,11 @@ function buildMessages() {
     '- No inline styles, scripts, images, video, audio, iframes, links, or external assets.',
     '- Do not wrap in <html> or <body>.',
     '- Keep text concise. Prefer short paragraphs or lists.',
+    'Math notation:',
+    '- For inline math, wrap LaTeX in single dollar signs: $E = mc^2$',
+    '- The editor automatically renders $...$ patterns as math.',
+    '- Example: "<p>The formula is $\\\\frac{a}{b}$ where $a$ is the numerator.</p>"',
+    '- Do NOT use \\\\( \\\\), \\\\[ \\\\], or other LaTeX delimiters.',
   ].join('\n');
 
   const userContent = [
