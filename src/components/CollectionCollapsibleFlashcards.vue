@@ -8,6 +8,7 @@ const props = defineProps<{
   collection: Collection | null;
   flashcards: Flashcard[];
   loading?: boolean;
+  includedCardIds?: Set<number>;
 }>();
 
 const hasCards = computed(() => props.flashcards.length > 0);
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   (e: 'edit', cardId: number): void;
   (e: 'delete', cardId: number): void;
   (e: 'create'): void;
+  (e: 'toggleInclude', cardId: number): void;
 }>();
 
 function getSnippet(html: string, maxLength = 90): string {
@@ -28,6 +30,14 @@ function getSnippet(html: string, maxLength = 90): string {
     return '—';
   }
   return stripped.length > maxLength ? `${stripped.slice(0, maxLength)}…` : stripped;
+}
+
+function isIncluded(cardId: number): boolean {
+  return props.includedCardIds?.has(cardId) ?? true;
+}
+
+function toggleInclude(cardId: number): void {
+  emit('toggleInclude', cardId);
 }
 </script>
 
@@ -52,6 +62,9 @@ function getSnippet(html: string, maxLength = 90): string {
         <table class="table">
           <thead>
             <tr>
+              <th class="w-16">
+                <span class="text-xs">Print</span>
+              </th>
               <th class="w-36">Preview</th>
               <th>Front</th>
               <th>Back</th>
@@ -59,7 +72,20 @@ function getSnippet(html: string, maxLength = 90): string {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="card in flashcards" :key="card.id">
+            <tr
+              v-for="card in flashcards"
+              :key="card.id"
+              :class="{ 'opacity-40': !isIncluded(card.id) }"
+            >
+              <td class="align-top">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm"
+                  :checked="isIncluded(card.id)"
+                  @change="toggleInclude(card.id)"
+                  aria-label="Include in print"
+                />
+              </td>
               <td class="align-top">
                 <button
                   type="button"

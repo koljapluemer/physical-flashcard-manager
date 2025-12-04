@@ -29,6 +29,7 @@ const deletingCollection = ref(false);
 const previewModalRef = ref<HTMLDialogElement | null>(null);
 const previewCard = ref<Flashcard | null>(null);
 const previewSide = ref<'front' | 'back'>('front');
+const includedCardIds = ref<Set<number>>(new Set());
 
 const modalState = reactive({
   open: false,
@@ -66,6 +67,8 @@ async function loadData() {
     ]);
     collection.value = collectionData;
     cards.value = flashcardsData;
+    // Initialize all cards as included
+    includedCardIds.value = new Set(flashcardsData.map(card => card.id));
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load data';
   } finally {
@@ -111,9 +114,17 @@ async function exportPdf() {
   exportingPdf.value = true;
 
   try {
+    // Filter cards to only include those that are checked
+    const cardsToExport = cards.value.filter(card => includedCardIds.value.has(card.id));
+
+    if (cardsToExport.length === 0) {
+      window.alert('No flashcards selected for printing. Please select at least one card.');
+      return;
+    }
+
     const blob = await renderApi.exportCollectionToPdf(
       collection.value,
-      cards.value,
+      cardsToExport,
       parseFloat(collection.value.width_mm ?? '148.5'),
       parseFloat(collection.value.height_mm ?? '105')
     );
@@ -217,6 +228,16 @@ async function removeCollection() {
     deletingCollection.value = false;
   }
 }
+
+function toggleCardInclude(cardId: number) {
+  if (includedCardIds.value.has(cardId)) {
+    includedCardIds.value.delete(cardId);
+  } else {
+    includedCardIds.value.add(cardId);
+  }
+  // Trigger reactivity by creating a new Set
+  includedCardIds.value = new Set(includedCardIds.value);
+}
 </script>
 
 <template>
@@ -247,10 +268,12 @@ async function removeCollection() {
         :collection="collection"
         :flashcards="cards"
         :loading="loading"
+        :included-card-ids="includedCardIds"
         @preview="openPreview"
         @edit="openCard"
         @delete="deleteCard"
         @create="createCard"
+        @toggle-include="toggleCardInclude"
       />
 
       <CollectionCollapsibleDangerZone :loading="deletingCollection" @remove="removeCollection" />
