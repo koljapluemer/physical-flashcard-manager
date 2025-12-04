@@ -35,7 +35,7 @@ export const MathSelectionCommands = Extension.create({
           if (empty || !dispatch) return false;
 
           const text = state.doc.textBetween(from, to, '');
-          const mathNode = state.schema.nodes['math_inline']?.create({ latex: text });
+          const mathNode = state.schema.nodes['inlineMath']?.create({ latex: text });
 
           if (!mathNode) return false;
 
