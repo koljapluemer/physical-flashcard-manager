@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { EditorContent, useEditor, type Editor } from '@tiptap/vue-3';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import type { Level } from '@tiptap/extension-heading';
-import { Box } from '../editor/extensions/box';
-import { MathExtensionConfigured, MathSelectionCommands } from '../editor/extensions/math';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
-import { resizeImageToDataUrl } from '../utils/image';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
-import { preprocessMathInHtml } from '../utils/mathPreprocessor';
 import CardPreview from '../components/CardPreview.vue';
 import CardChatPane from '../components/CardChatPane.vue';
 import * as collectionsApi from '../api/collections';
@@ -27,10 +19,9 @@ const router = useRouter();
 const collection = ref<Collection | null>(null);
 const card = ref<Flashcard | null>(null);
 const saveLoading = ref(false);
-const frontHtml = ref('');
-const backHtml = ref('');
+const frontMarkdown = ref('');
+const backMarkdown = ref('');
 const headerRight = ref('');
-const headingLevel: Level = 3;
 
 const isNew = computed(() => props.cardId === 'new');
 
@@ -54,73 +45,6 @@ watch(
   { immediate: true }
 );
 
-const editorExtensions = [
-  StarterKit.configure({
-    heading: {
-      levels: [2, 3, 4],
-    },
-    codeBlock: false,
-  }),
-  Box,
-  Image.configure({
-    inline: false,
-  }),
-  MathExtensionConfigured,
-  MathSelectionCommands,
-];
-
-function handleImageEvent(event: ClipboardEvent | DragEvent, editor: Editor | undefined) {
-  const transfer = 'clipboardData' in event ? event.clipboardData : event.dataTransfer;
-  if (!transfer) {
-    return false;
-  }
-
-  const files = Array.from(transfer.files ?? []);
-  const images = files.filter((file) => file.type.startsWith('image/'));
-  if (!images.length || !editor) {
-    return false;
-  }
-
-  event.preventDefault();
-  void insertResizedImages(images, editor);
-  return true;
-}
-
-async function insertResizedImages(files: File[], editor: Editor) {
-  for (const file of files) {
-    try {
-      const dataUrl = await resizeImageToDataUrl(file, 700);
-      editor.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
-    } catch (error) {
-      console.error('Failed to resize image', error);
-    }
-  }
-}
-
-const frontEditor = useEditor({
-  content: '',
-  extensions: editorExtensions,
-  editorProps: {
-    handlePaste: (_view, event) => handleImageEvent(event, frontEditor.value),
-    handleDrop: (_view, event) => handleImageEvent(event, frontEditor.value),
-  },
-  onUpdate: ({ editor }) => {
-    frontHtml.value = editor.getHTML();
-  },
-});
-
-const backEditor = useEditor({
-  content: '',
-  extensions: editorExtensions,
-  editorProps: {
-    handlePaste: (_view, event) => handleImageEvent(event, backEditor.value),
-    handleDrop: (_view, event) => handleImageEvent(event, backEditor.value),
-  },
-  onUpdate: ({ editor }) => {
-    backHtml.value = editor.getHTML();
-  },
-});
-
 async function loadData() {
   const collectionId = parseInt(props.id, 10);
 
@@ -131,24 +55,13 @@ async function loadData() {
       const cardIdNum = parseInt(props.cardId, 10);
       card.value = await flashcardsApi.getFlashcard(cardIdNum);
 
-      const frontContent = card.value.front || '<p></p>';
-      const backContent = card.value.back || '<p></p>';
-
-      frontEditor.value?.commands.setContent(frontContent, { emitUpdate: false });
-      backEditor.value?.commands.setContent(backContent, { emitUpdate: false });
-
-      frontHtml.value = frontContent;
-      backHtml.value = backContent;
+      frontMarkdown.value = card.value.front || '';
+      backMarkdown.value = card.value.back || '';
       headerRight.value = card.value.header_right || '';
     } else {
       card.value = null;
-      const emptyContent = '<p></p>';
-
-      frontEditor.value?.commands.setContent(emptyContent, { emitUpdate: false });
-      backEditor.value?.commands.setContent(emptyContent, { emitUpdate: false });
-
-      frontHtml.value = emptyContent;
-      backHtml.value = emptyContent;
+      frontMarkdown.value = '';
+      backMarkdown.value = '';
       headerRight.value = '';
     }
   } catch (err) {
@@ -165,31 +78,7 @@ watch(() => props.cardId, () => {
   loadData();
 });
 
-function toggleBold(editor: Editor | undefined) {
-  editor?.chain().focus().toggleBold().run();
-}
-
-function toggleItalic(editor: Editor | undefined) {
-  editor?.chain().focus().toggleItalic().run();
-}
-
-function toggleBulletList(editor: Editor | undefined) {
-  editor?.chain().focus().toggleBulletList().run();
-}
-
-function toggleOrderedList(editor: Editor | undefined) {
-  editor?.chain().focus().toggleOrderedList().run();
-}
-
-function setHeading(editor: Editor | undefined, level: Level) {
-  editor?.chain().focus().toggleHeading({ level }).run();
-}
-
 async function handleSave() {
-  if (!frontEditor.value || !backEditor.value) {
-    return;
-  }
-
   saveLoading.value = true;
 
   try {
@@ -198,15 +87,15 @@ async function handleSave() {
     if (isNew.value) {
       await flashcardsApi.createFlashcard({
         collection: collectionId,
-        front: frontEditor.value.getHTML(),
-        back: backEditor.value.getHTML(),
+        front: frontMarkdown.value,
+        back: backMarkdown.value,
         header_right: headerRight.value.trim() || undefined,
       });
     } else {
       const cardIdNum = parseInt(props.cardId, 10);
       await flashcardsApi.updateFlashcard(cardIdNum, {
-        front: frontEditor.value.getHTML(),
-        back: backEditor.value.getHTML(),
+        front: frontMarkdown.value,
+        back: backMarkdown.value,
         header_right: headerRight.value.trim() || undefined,
       });
     }
@@ -218,33 +107,13 @@ async function handleSave() {
   }
 }
 
-function insertImageFromPicker(editor: Editor | undefined, event: Event) {
-  const target = event.target as HTMLInputElement;
-  const files = target.files ? Array.from(target.files) : [];
-  if (!files.length || !editor) {
-    return;
-  }
-  void insertResizedImages(files, editor);
-  target.value = '';
-}
-
 function fillHeaderRight(text: string) {
   headerRight.value = text;
 }
 
 function applyAiSuggestion(payload: { front: string; back: string; header_right?: string }) {
-  // Pre-process HTML to convert $...$ patterns to proper math nodes
-  const processedFront = preprocessMathInHtml(payload.front);
-  const processedBack = preprocessMathInHtml(payload.back);
-
-  if (frontEditor.value) {
-    frontEditor.value.commands.setContent(processedFront, { emitUpdate: false });
-    frontHtml.value = processedFront;
-  }
-  if (backEditor.value) {
-    backEditor.value.commands.setContent(processedBack, { emitUpdate: false });
-    backHtml.value = processedBack;
-  }
+  frontMarkdown.value = payload.front;
+  backMarkdown.value = payload.back;
   headerRight.value = payload.header_right?.trim() || '';
 }
 </script>
@@ -262,6 +131,23 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
         </p>
       </div>
     </div>
+
+    <details class="collapse collapse-arrow bg-base-200">
+      <summary class="collapse-title font-medium">Markdown Tips</summary>
+      <div class="collapse-content font-mono text-sm">
+        <pre class="whitespace-pre-wrap">**bold**          Bold text
+*italic*          Italic text
+### Heading       Heading level 3
+- item            Bullet list
+1. item           Numbered list
+![alt](url)       Image
+$E = mc^2$        Inline math (LaTeX)
+
+```box
+Content here
+```               Colored box</pre>
+      </div>
+    </details>
 
     <div class="grid gap-6 lg:grid-cols-2">
       <div class="space-y-4">
@@ -286,58 +172,11 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
             <div class="flex items-center justify-between">
               <h2 class="card-title text-xl">Front</h2>
             </div>
-            <div class="editor-container">
-              <div class="editor-toolbar">
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': frontEditor?.isActive('bold') }"
-                  @click="toggleBold(frontEditor)"
-                >
-                  Bold
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': frontEditor?.isActive('italic') }"
-                  @click="toggleItalic(frontEditor)"
-                >
-                  Italic
-                </button>
-                <button type="button" class="btn btn-xs" @click="toggleBulletList(frontEditor)">Bullets</button>
-                <button type="button" class="btn btn-xs" @click="toggleOrderedList(frontEditor)">Numbered</button>
-                <button type="button" class="btn btn-xs" @click="setHeading(frontEditor, headingLevel)">
-                  Heading
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': frontEditor?.isActive('box') }"
-                  @click="frontEditor?.chain().focus().toggleBox().run()"
-                >
-                  Box
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :disabled="frontEditor?.state.selection.empty"
-                  @click="frontEditor?.commands.selectionToInlineMath()"
-                  title="Convert selected text to math (Ctrl+Shift+M). Or just type $...$"
-                >
-                  Selection → Math
-                </button>
-                <label class="btn btn-xs">
-                  Image
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept="image/*"
-                    @change="insertImageFromPicker(frontEditor, $event)"
-                  />
-                </label>
-              </div>
-              <EditorContent v-if="frontEditor" :editor="frontEditor" />
-            </div>
+            <textarea
+              v-model="frontMarkdown"
+              class="textarea textarea-bordered w-full h-48 font-mono"
+              placeholder="Enter markdown..."
+            />
           </div>
         </div>
 
@@ -345,7 +184,7 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
           <div class="card-body space-y-3">
             <h3 class="card-title text-lg">Front Preview</h3>
             <CardPreview
-              :html="frontHtml"
+              :markdown="frontMarkdown"
               side="front"
               :collection="collection ?? undefined"
               :flashcard="{ header_right: headerRight } as any"
@@ -360,58 +199,11 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
             <div class="flex items-center justify-between">
               <h2 class="card-title text-xl">Back</h2>
             </div>
-            <div class="editor-container">
-              <div class="editor-toolbar">
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': backEditor?.isActive('bold') }"
-                  @click="toggleBold(backEditor)"
-                >
-                  Bold
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': backEditor?.isActive('italic') }"
-                  @click="toggleItalic(backEditor)"
-                >
-                  Italic
-                </button>
-                <button type="button" class="btn btn-xs" @click="toggleBulletList(backEditor)">Bullets</button>
-                <button type="button" class="btn btn-xs" @click="toggleOrderedList(backEditor)">Numbered</button>
-                <button type="button" class="btn btn-xs" @click="setHeading(backEditor, headingLevel)">
-                  Heading
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :class="{ 'btn-active': backEditor?.isActive('box') }"
-                  @click="backEditor?.chain().focus().toggleBox().run()"
-                >
-                  Box
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-xs"
-                  :disabled="backEditor?.state.selection.empty"
-                  @click="backEditor?.commands.selectionToInlineMath()"
-                  title="Convert selected text to math (Ctrl+Shift+M). Or just type $...$"
-                >
-                  Selection → Math
-                </button>
-                <label class="btn btn-xs">
-                  Image
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept="image/*"
-                    @change="insertImageFromPicker(backEditor, $event)"
-                  />
-                </label>
-              </div>
-              <EditorContent v-if="backEditor" :editor="backEditor" />
-            </div>
+            <textarea
+              v-model="backMarkdown"
+              class="textarea textarea-bordered w-full h-48 font-mono"
+              placeholder="Enter markdown..."
+            />
           </div>
         </div>
 
@@ -419,7 +211,7 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
           <div class="card-body space-y-3">
             <h3 class="card-title text-lg">Back Preview</h3>
             <CardPreview
-              :html="backHtml"
+              :markdown="backMarkdown"
               side="back"
               :collection="collection ?? undefined"
             />
@@ -438,8 +230,8 @@ function applyAiSuggestion(payload: { front: string; back: string; header_right?
 
     <CardChatPane
       :collection="collection"
-      :front-html="frontHtml"
-      :back-html="backHtml"
+      :front-markdown="frontMarkdown"
+      :back-markdown="backMarkdown"
       :header-right="headerRight"
       @apply-suggestion="applyAiSuggestion"
     />

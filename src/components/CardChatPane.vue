@@ -9,9 +9,14 @@ import { useSettingsStore } from '../stores/settings';
 import { useToastStore } from '../stores/toast';
 
 type ProposedCard = {
-  front_html: string;
-  back_html: string;
+  front: string;
+  back: string;
   header_right?: string;
+};
+
+type AiResponse = {
+  reply?: string;
+  card?: ProposedCard;
 };
 
 type ProposalStatus = 'pending' | 'accepted' | 'dismissed';
@@ -26,8 +31,8 @@ type ChatMessage = {
 
 const props = defineProps<{
   collection: Collection | null;
-  frontHtml: string;
-  backHtml: string;
+  frontMarkdown: string;
+  backMarkdown: string;
   headerRight: string;
 }>();
 
@@ -84,12 +89,12 @@ function extractJson(text: string) {
   return text.trim();
 }
 
-function stripHtml(html: string, maxLength = 600) {
-  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!text) {
+function truncateText(text: string, maxLength = 600) {
+  const trimmed = text.trim();
+  if (!trimmed) {
     return '';
   }
-  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}…` : trimmed;
 }
 
 function buildMessages(prompt: string) {
@@ -103,14 +108,14 @@ function buildMessages(prompt: string) {
         }
       : null,
     current_card: {
-      front: stripHtml(props.frontHtml),
-      back: stripHtml(props.backHtml),
+      front: truncateText(props.frontMarkdown),
+      back: truncateText(props.backMarkdown),
       header_right: props.headerRight,
     },
     examples: flashcardContext.value.slice(0, 4).map((item) => ({
       id: item.id,
-      front: stripHtml(item.front, 240),
-      back: stripHtml(item.back, 240),
+      front: truncateText(item.front, 240),
+      back: truncateText(item.back, 240),
       header_right: item.header_right,
     })),
   };
@@ -123,16 +128,14 @@ function buildMessages(prompt: string) {
   const systemContent = [
     'You help edit flashcards for a physical flashcard app.',
     'Always respond with JSON only, no Markdown fences.',
-    'Schema: {"reply":"short chat reply","card":{"front_html":"<html>","back_html":"<html>","header_right":"<optional>"}}',
-    'HTML rules:',
-    '- Use simple tags only: <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>, <h2>, <h3>, <code>, <pre>, <blockquote>, <br>.',
-    '- No inline styles, links, scripts, iframes, media, or external assets.',
+    'Schema: {"reply":"short chat reply","card":{"front":"markdown","back":"markdown","header_right":"optional"}}',
+    'Markdown format rules:',
+    '- Use **bold**, *italic*, # headings, - bullets, 1. numbered lists',
+    '- Math: use $E = mc^2$ for inline math (single dollar signs)',
+    '- Colored boxes: use ```box\\nContent here\\n``` fenced code blocks',
     '- Keep answers concise and readable on a small physical card.',
-    'Math notation:',
-    '- For inline math, wrap LaTeX in single dollar signs: $E = mc^2$',
-    '- The editor will automatically render $...$ patterns as math.',
-    '- Example: "<p>The energy is $E = mc^2$ where $c$ is the speed of light.</p>"',
-    '- Do NOT use \\( \\), \\[ \\], or other LaTeX delimiters.',
+    '- Do NOT use HTML tags - use pure Markdown only.',
+    '- Do NOT use \\( \\), \\[ \\], or other LaTeX delimiters - only $...$',
   ].join('\n');
 
   return [
@@ -194,14 +197,14 @@ async function sendMessage() {
 
     const parsedText = extractJson(content);
 
-    let parsed: any;
+    let parsed: AiResponse | undefined;
     let replyText: string;
     let card: ProposedCard | undefined;
 
     try {
-      parsed = JSON.parse(parsedText);
-      replyText = parsed?.reply || 'Proposed changes ready.';
-      card = parsed?.card;
+      parsed = JSON.parse(parsedText) as AiResponse;
+      replyText = parsed.reply || 'Proposed changes ready.';
+      card = parsed.card;
     } catch (jsonError) {
       // JSON parsing failed - log details for debugging
       console.error('JSON Parse Error:', jsonError);
@@ -224,8 +227,8 @@ async function sendMessage() {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: replyText,
-      proposal: card?.front_html && card?.back_html ? card : undefined,
-      proposalStatus: card?.front_html && card?.back_html ? 'pending' : undefined,
+      proposal: card?.front && card?.back ? card : undefined,
+      proposalStatus: card?.front && card?.back ? 'pending' : undefined,
     };
 
     messages.value = [...messages.value, assistantMessage];
@@ -245,8 +248,8 @@ function applyProposal(message: ChatMessage) {
   if (!message.proposal) return;
 
   emit('applySuggestion', {
-    front: message.proposal.front_html,
-    back: message.proposal.back_html,
+    front: message.proposal.front,
+    back: message.proposal.back,
     header_right: message.proposal.header_right,
   });
 
@@ -306,7 +309,7 @@ function dismissProposal(message: ChatMessage) {
                 <div class="rounded border border-base-300 p-2">
                   <p class="font-medium mb-2">Front</p>
                   <CardPreview
-                    :html="message.proposal.front_html"
+                    :markdown="message.proposal.front"
                     side="front"
                     :collection="collection ?? undefined"
                     :flashcard="{ header_right: message.proposal.header_right } as any"
@@ -316,7 +319,7 @@ function dismissProposal(message: ChatMessage) {
                 <div class="rounded border border-base-300 p-2">
                   <p class="font-medium mb-2">Back</p>
                   <CardPreview
-                    :html="message.proposal.back_html"
+                    :markdown="message.proposal.back"
                     side="back"
                     :collection="collection ?? undefined"
                     :scale="0.9"

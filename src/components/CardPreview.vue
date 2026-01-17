@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, watch, withDefaults } from 'vue';
+import { computed, ref, watch, withDefaults } from 'vue';
 import { useSettingsStore } from '../stores/settings';
-import { renderMathHtml } from '../utils/math';
+import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
 import type { Collection, Flashcard } from '../types';
@@ -9,24 +9,24 @@ import '../styles/cardPreview.css';
 
 const props = withDefaults(
   defineProps<{
-    html?: string;
+    markdown?: string;
     side?: 'front' | 'back';
     collection?: Collection;
     flashcard?: Flashcard;
     frontOnly?: boolean;
     useDemoValues?: boolean;
-    demoFrontHtml?: string;
-    demoBackHtml?: string;
+    demoFrontMarkdown?: string;
+    demoBackMarkdown?: string;
     demoHeaderRight?: string;
     scale?: number;
   }>(),
   {
-    html: '',
+    markdown: '',
     side: 'front',
     frontOnly: false,
     useDemoValues: false,
-    demoFrontHtml: '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>',
-    demoBackHtml: '<p>Aliquam convallis massa et sapien faucibus, vitae placerat velit efficitur.</p>',
+    demoFrontMarkdown: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    demoBackMarkdown: 'Aliquam convallis massa et sapien faucibus, vitae placerat velit efficitur.',
     demoHeaderRight: 'Page 1',
     scale: 1,
   }
@@ -65,17 +65,29 @@ const cardStyle = computed(() => {
 
 const resolvedSide = computed(() => (props.frontOnly ? 'front' : props.side));
 
-const renderedHtml = computed(() => {
-  const content = props.html?.trim();
-  if (content) {
-    return renderMathHtml(content);
-  }
-  if (props.useDemoValues) {
-    const fallback = resolvedSide.value === 'front' ? props.demoFrontHtml : props.demoBackHtml;
-    return renderMathHtml(fallback);
-  }
-  return '';
-});
+const renderedHtml = ref('');
+
+watch(
+  [
+    () => props.markdown,
+    () => props.useDemoValues,
+    resolvedSide,
+    () => props.demoFrontMarkdown,
+    () => props.demoBackMarkdown,
+  ],
+  async () => {
+    const content = props.markdown?.trim();
+    if (content) {
+      renderedHtml.value = await markdownToHtml(content);
+    } else if (props.useDemoValues) {
+      const fallback = resolvedSide.value === 'front' ? props.demoFrontMarkdown : props.demoBackMarkdown;
+      renderedHtml.value = await markdownToHtml(fallback);
+    } else {
+      renderedHtml.value = '';
+    }
+  },
+  { immediate: true }
+);
 
 const headerTextLeft = computed(() => props.collection?.header_text_left ?? '');
 const headerTextRight = computed(() =>

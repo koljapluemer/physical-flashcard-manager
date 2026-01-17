@@ -1,5 +1,5 @@
 import cardContentCss from '../styles/cardContent.css?raw';
-import { renderMathHtml } from '../utils/math';
+import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, isSystemFont } from '../utils/fonts';
 import type { Collection, Flashcard } from '../types';
@@ -10,9 +10,9 @@ interface RenderRequest {
   pageSize?: [number, number]; // [width, height] in millimeters
 }
 
-function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: Collection): string {
-  const content = side === 'front' ? card.front : card.back;
-  const renderedContent = renderMathHtml(content);
+async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: Collection): Promise<string> {
+  const markdownContent = side === 'front' ? card.front : card.back;
+  const renderedContent = await markdownToHtml(markdownContent);
 
   const headerColor = normalizeHexColor(collection.header_color);
   const boxBgColor = hexToRgba(headerColor, 0.08);
@@ -115,8 +115,10 @@ export async function exportCollectionToPdf(
   // Build pages array: 2 pages per card (front, then back)
   const pages: string[] = [];
   for (const card of flashcards) {
-    pages.push(buildCardPageHtml(card, 'front', collection));
-    pages.push(buildCardPageHtml(card, 'back', collection));
+    const frontHtml = await buildCardPageHtml(card, 'front', collection);
+    const backHtml = await buildCardPageHtml(card, 'back', collection);
+    pages.push(frontHtml);
+    pages.push(backHtml);
   }
 
   const requestBody: RenderRequest = {
