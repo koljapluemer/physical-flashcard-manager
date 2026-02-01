@@ -15,6 +15,7 @@ export async function createFlashcard(data: {
   front: string;
   back: string;
   header_right?: string;
+  is_info_card?: boolean;
 }): Promise<Flashcard> {
   return apiRequest<Flashcard>('/flashcards/', {
     method: 'POST',
@@ -24,7 +25,7 @@ export async function createFlashcard(data: {
 
 export async function updateFlashcard(
   id: number,
-  data: Partial<{ front: string; back: string; header_right?: string }>
+  data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean }>
 ): Promise<Flashcard> {
   return apiRequest<Flashcard>(`/flashcards/${id}/`, {
     method: 'PATCH',

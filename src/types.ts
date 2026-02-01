@@ -20,6 +20,7 @@ export interface Flashcard {
   front: string;
   back: string;
   header_right?: string;
+  is_info_card?: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -22,6 +22,7 @@ const saveLoading = ref(false);
 const frontMarkdown = ref('');
 const backMarkdown = ref('');
 const headerRight = ref('');
+const isInfoCard = ref(false);
 
 const isNew = computed(() => props.cardId === 'new');
 
@@ -58,11 +59,13 @@ async function loadData() {
       frontMarkdown.value = card.value.front || '';
       backMarkdown.value = card.value.back || '';
       headerRight.value = card.value.header_right || '';
+      isInfoCard.value = card.value.is_info_card ?? false;
     } else {
       card.value = null;
       frontMarkdown.value = '';
       backMarkdown.value = '';
       headerRight.value = '';
+      isInfoCard.value = false;
     }
   } catch (err) {
     console.error('Failed to load data', err);
@@ -90,6 +93,7 @@ async function handleSave() {
         front: frontMarkdown.value,
         back: backMarkdown.value,
         header_right: headerRight.value.trim() || undefined,
+        is_info_card: isInfoCard.value,
       });
     } else {
       const cardIdNum = parseInt(props.cardId, 10);
@@ -97,6 +101,7 @@ async function handleSave() {
         front: frontMarkdown.value,
         back: backMarkdown.value,
         header_right: headerRight.value.trim() || undefined,
+        is_info_card: isInfoCard.value,
       });
     }
     router.push({ name: 'collectionDetail', params: { id: props.id } });
@@ -149,26 +154,42 @@ Content here
       </div>
     </details>
 
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <h2 class="card-title text-xl mb-2">Card Settings</h2>
+        <div class="flex flex-wrap gap-6">
+          <fieldset class="fieldset flex-1 min-w-48">
+            <legend class="fieldset-legend">Header (Right)</legend>
+            <div class="flex flex-wrap gap-2 mb-2">
+              <button @click="fillHeaderRight('Overview')" type="button" class="btn btn-xs">Overview</button>
+              <button @click="fillHeaderRight('Level 1')" type="button" class="btn btn-xs">Level 1</button>
+              <button @click="fillHeaderRight('Level 2')" type="button" class="btn btn-xs">Level 2</button>
+              <button @click="fillHeaderRight('Level 3')" type="button" class="btn btn-xs">Level 3</button>
+            </div>
+            <input
+              v-model="headerRight"
+              type="text"
+              class="input input-bordered w-full"
+              placeholder="Optional text shown on front of card"
+            />
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Card Type</legend>
+            <label class="flex items-center gap-3 cursor-pointer py-2">
+              <span class="label-text">Learn</span>
+              <input v-model="isInfoCard" type="checkbox" class="toggle" />
+              <span class="label-text">Info</span>
+            </label>
+          </fieldset>
+        </div>
+      </div>
+    </div>
+
     <div class="grid gap-6 lg:grid-cols-2">
       <div class="space-y-4">
         <div class="card bg-base-100 shadow">
           <div class="card-body space-y-4">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">Card Header (Right)</legend>
-              <div class="flex flex-wrap gap-2 mb-2">
-                <button @click="fillHeaderRight('Overview')" type="button" class="btn btn-xs">Overview</button>
-                <button @click="fillHeaderRight('Level 1')" type="button" class="btn btn-xs">Level 1</button>
-                <button @click="fillHeaderRight('Level 2')" type="button" class="btn btn-xs">Level 2</button>
-                <button @click="fillHeaderRight('Level 3')" type="button" class="btn btn-xs">Level 3</button>
-              </div>
-              <input
-                v-model="headerRight"
-                type="text"
-                class="input input-bordered w-full"
-                placeholder="Optional text shown on front of card"
-              />
-            </fieldset>
-
             <div class="flex items-center justify-between">
               <h2 class="card-title text-xl">Front</h2>
             </div>
