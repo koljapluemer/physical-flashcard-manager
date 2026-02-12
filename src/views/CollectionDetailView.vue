@@ -137,9 +137,9 @@ async function exportPdf() {
   }
 }
 
-function openPreview(card: Flashcard) {
+function openPreview(card: Flashcard, side: 'front' | 'back' = 'front') {
   previewCard.value = card;
-  previewSide.value = 'front';
+  previewSide.value = side;
   previewModalRef.value?.showModal();
 }
 
@@ -323,7 +323,7 @@ function toggleCardInclude(cardId: number) {
 
         <div v-if="previewCard" class="space-y-4">
           <CardPreview
-            :html="previewHtml"
+            :markdown="previewHtml"
             :side="previewSide"
             :collection="collection ?? undefined"
             :flashcard="previewCard"

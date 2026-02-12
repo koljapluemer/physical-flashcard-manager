@@ -14,23 +14,12 @@ const props = defineProps<{
 const hasCards = computed(() => props.flashcards.length > 0);
 
 const emit = defineEmits<{
-  (e: 'preview', card: Flashcard): void;
+  (e: 'preview', card: Flashcard, side: 'front' | 'back'): void;
   (e: 'edit', cardId: number): void;
   (e: 'delete', cardId: number): void;
   (e: 'create'): void;
   (e: 'toggleInclude', cardId: number): void;
 }>();
-
-function getSnippet(html: string, maxLength = 90): string {
-  if (!html) {
-    return '—';
-  }
-  const stripped = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!stripped) {
-    return '—';
-  }
-  return stripped.length > maxLength ? `${stripped.slice(0, maxLength)}…` : stripped;
-}
 
 function isIncluded(cardId: number): boolean {
   return props.includedCardIds?.has(cardId) ?? true;
@@ -65,10 +54,9 @@ function toggleInclude(cardId: number): void {
               <th class="w-16">
                 <span class="text-xs">Print</span>
               </th>
-              <th class="w-36">Preview</th>
               <th>Front</th>
               <th>Back</th>
-              <th class="text-right">Actions</th>
+              <th class="text-right w-full">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -90,10 +78,10 @@ function toggleInclude(cardId: number): void {
                 <button
                   type="button"
                   class="transition hover:scale-[1.02] cursor-pointer"
-                  @click="emit('preview', card)"
+                  @click="emit('preview', card, 'front')"
                 >
                   <CardPreview
-                    :html="card.front"
+                    :markdown="card.front"
                     side="front"
                     :front-only="true"
                     :collection="collection ?? undefined"
@@ -102,11 +90,20 @@ function toggleInclude(cardId: number): void {
                   />
                 </button>
               </td>
-              <td class="align-top text-sm">
-                {{ getSnippet(card.front) }}
-              </td>
-              <td class="align-top text-sm">
-                {{ getSnippet(card.back) }}
+              <td class="align-top">
+                <button
+                  type="button"
+                  class="transition hover:scale-[1.02] cursor-pointer"
+                  @click="emit('preview', card, 'back')"
+                >
+                  <CardPreview
+                    :markdown="card.back"
+                    side="back"
+                    :collection="collection ?? undefined"
+                    :flashcard="card"
+                    :scale="0.35"
+                  />
+                </button>
               </td>
               <td class="align-top">
                 <div class="flex justify-end gap-2">
