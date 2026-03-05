@@ -3,9 +3,9 @@ declare module 'html2pdf.js' {
     margin?: number | [number, number] | [number, number, number, number];
     pagebreak?: {
       mode?: string[];
-      before?: string;
-      after?: string;
-      avoid?: string;
+      before?: string | string[];
+      after?: string | string[];
+      avoid?: string | string[];
     };
     html2canvas?: {
       scale?: number;

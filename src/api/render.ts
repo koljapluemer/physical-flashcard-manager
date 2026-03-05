@@ -49,21 +49,34 @@ async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collec
 }
 
 function buildRenderStyles(cardWidthMm: number, cardHeightMm: number): string {
+  const pxPerMm = 96 / 25.4;
+  const cardWidthPx = Math.round(cardWidthMm * pxPerMm);
+  const cardHeightPx = Math.round(cardHeightMm * pxPerMm);
+
   return `
     .pdf-root {
-      width: ${cardWidthMm}mm;
+      width: ${cardWidthPx}px;
       margin: 0;
       padding: 0;
-      background: #fff;
+      background: var(--background-color, #fff);
     }
 
     .pdf-page {
-      width: ${cardWidthMm}mm;
-      height: ${cardHeightMm}mm;
+      width: ${cardWidthPx}px;
+      height: ${cardHeightPx}px;
+      background:  var(--background-color, #fff);
       page-break-after: always;
       break-after: page;
       overflow: hidden;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-before: auto;
+      break-before: auto;
+      margin: 0;
+      padding: 0;
     }
 
     .pdf-page:last-child {
@@ -77,6 +90,12 @@ function buildRenderStyles(cardWidthMm: number, cardHeightMm: number): string {
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
+      overflow: hidden;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      flex: 1 1 auto;
+      margin: 0;
+      background: var(--background-color, #fff);
     }
 
     .pdf-flashcard-header {
@@ -100,7 +119,6 @@ function buildRenderStyles(cardWidthMm: number, cardHeightMm: number): string {
 
     .pdf-flashcard-content {
       width: 100%;
-      height: 100%;
       padding: 1rem;
       overflow: hidden;
       font-family: var(--font-family, Arial, sans-serif);
@@ -109,7 +127,13 @@ function buildRenderStyles(cardWidthMm: number, cardHeightMm: number): string {
       text-align: left;
       box-sizing: border-box;
       color: var(--font-color, #171717);
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .pdf-page * {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     ${cardContentCss}
@@ -205,15 +229,19 @@ export async function exportCollectionToPdf(
     }
 
     for (const card of flashcards) {
+      const pageBackgroundColor = collection.background_color ?? '#f0f0f0';
+
       const frontHtml = await buildCardPageHtml(card, 'front', collection);
       const frontPage = renderDocument.createElement('div');
       frontPage.className = 'pdf-page';
+      frontPage.style.setProperty('--page-bg', pageBackgroundColor);
       frontPage.innerHTML = frontHtml;
       root.appendChild(frontPage);
 
       const backHtml = await buildCardPageHtml(card, 'back', collection);
       const backPage = renderDocument.createElement('div');
       backPage.className = 'pdf-page';
+      backPage.style.setProperty('--page-bg', pageBackgroundColor);
       backPage.innerHTML = backHtml;
       root.appendChild(backPage);
     }
@@ -230,7 +258,11 @@ export async function exportCollectionToPdf(
       blob = await html2pdf()
         .set({
           margin: 0,
-          pagebreak: { mode: ['css', 'legacy'] },
+          pagebreak: {
+            mode: ['css', 'legacy'],
+            before: '.pdf-page:not(:first-child)',
+            avoid: ['.pdf-flashcard', '.pdf-flashcard *'],
+          },
           html2canvas: {
             scale: 2,
             useCORS: true,
