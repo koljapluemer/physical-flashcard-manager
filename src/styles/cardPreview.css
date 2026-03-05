@@ -7,6 +7,14 @@
   background: var(--background-color, #f0f0f0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: var(--card-width);
+  font-family: var(--font-family, Arial, sans-serif);
+  color: var(--font-color, #171717);
+  line-height: 1.6;
+}
+
+.flashcard-preview-container,
+.flashcard-preview-container * {
+  box-sizing: border-box;
 }
 
 .flashcard-header {

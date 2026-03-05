@@ -33,7 +33,7 @@ export interface Material {
   pageRangeStart: number;
   pageRangeEnd: number;
   pageCount: number;
-  file: Blob;
+  storagePath?: string;
   createdAt: string;
   updatedAt: string;
 }

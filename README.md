@@ -10,8 +10,8 @@ Vue 3 + TypeScript web application for creating, editing, and exporting mathemat
 - **Editor**: Plain textarea with markdown syntax
 - **Math Rendering**: KaTeX (via remark-math + rehype-katex)
 - **Styling**: Tailwind CSS + DaisyUI
-- **Backend**: REST API (separate repository)
-- **PDF Generation**: External rendering service
+- **Auth + Data + Files**: Supabase (Auth, Postgres, Storage)
+- **PDF Generation**: Browser-side `html2pdf.js`
 
 ## Content Format
 
@@ -30,10 +30,10 @@ Flashcard content is stored as **Markdown**. The editor uses plain textareas for
 | Inline math | `$E = mc^2$` | Rendered via KaTeX |
 | Colored box | ` ```box\ntext\n``` ` | Highlighted aside |
 
-### Architecture
+## Architecture
 
-```
-User types markdown in <textarea> → Stored as markdown
+```text
+User types markdown in <textarea> → Stored as markdown in Supabase
                                          ↓
 Preview/PDF ← HTML ← markdownToHtml() ← Markdown
 ```
@@ -46,12 +46,19 @@ Preview/PDF ← HTML ← markdownToHtml() ← Markdown
 
 ## Setup
 
+1. Install dependencies:
+
 ```bash
 npm install
-git submodule add git@github.com:koljapluemer/physical-flashcard-doc.git doc
 ```
 
-- Create `.env` from `.env.example`
+2. Create `.env` from `.env.example` and set Supabase values:
+
+```bash
+cp .env.example .env
+```
+
+3. Apply Supabase schema migration from `supabase/migrations/` to your project.
 
 ## Commands
 
@@ -68,4 +75,6 @@ npm run lint     # ESLint check
 | `src/views/CardEditorView.vue` | Card editor with markdown textareas |
 | `src/utils/markdownToHtml.ts` | Markdown → HTML conversion (math + boxes) |
 | `src/components/CardPreview.vue` | Live preview with rendered markdown |
-| `src/api/render.ts` | PDF export with markdown conversion |
+| `src/api/render.ts` | PDF export via html2pdf |
+| `src/api/supabase.ts` | Supabase client and DB type mapping |
+| `supabase/migrations/202603050001_init_schema.sql` | Supabase schema, RLS, storage policies |

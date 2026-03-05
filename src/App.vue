@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import ToastHost from './components/ToastHost.vue';
 
 const authStore = useAuthStore();
 const route = useRoute();
-
-onMounted(() => {
-  authStore.init();
-});
 </script>
 
 <template>

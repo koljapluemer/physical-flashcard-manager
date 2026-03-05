@@ -10,7 +10,7 @@ const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
 
-async function handleLogin() {
+async function handleAuthSubmit() {
   errorMessage.value = '';
 
   if (!email.value || !password.value) {
@@ -22,7 +22,7 @@ async function handleLogin() {
     await authStore.login(email.value, password.value);
     router.push('/collections');
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Login failed';
+    errorMessage.value = error instanceof Error ? error.message : 'Authentication failed';
   }
 }
 </script>
@@ -40,7 +40,7 @@ async function handleLogin() {
           <span>{{ errorMessage }}</span>
         </div>
 
-        <form class="space-y-4" @submit.prevent="handleLogin">
+        <form class="space-y-4" @submit.prevent="handleAuthSubmit">
           <fieldset class="fieldset">
             <legend class="fieldset-legend">Email</legend>
             <input
@@ -50,6 +50,7 @@ async function handleLogin() {
               type="email"
               placeholder="user@example.com"
               required
+              autocomplete="email"
             />
           </fieldset>
 
@@ -62,6 +63,7 @@ async function handleLogin() {
               type="password"
               placeholder="••••••••"
               required
+              autocomplete="current-password"
             />
           </fieldset>
 

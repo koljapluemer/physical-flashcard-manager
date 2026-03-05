@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { isAuthenticated } from '../api/auth';
+import { hasSession } from '../api/auth';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -42,14 +42,18 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, _from, next) => {
-  if (to.meta.requiresAuth && !isAuthenticated()) {
-    next({ name: 'login' });
-  } else if (to.name === 'login' && isAuthenticated()) {
-    next({ name: 'collections' });
-  } else {
-    next();
+router.beforeEach(async (to) => {
+  const authenticated = await hasSession();
+
+  if (to.meta.requiresAuth && !authenticated) {
+    return { name: 'login' };
   }
+
+  if (to.name === 'login' && authenticated) {
+    return { name: 'collections' };
+  }
+
+  return true;
 });
 
 export default router;

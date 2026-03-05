@@ -1,12 +1,58 @@
-import { apiRequest } from './client';
+import { supabase } from './supabase';
 import type { Collection } from '../types';
+import type { Database } from './supabase';
+
+type CollectionRow = Database['public']['Tables']['collections']['Row'];
+type CollectionInsert = Database['public']['Tables']['collections']['Insert'];
+type CollectionUpdate = Database['public']['Tables']['collections']['Update'];
+
+function mapCollection(row: CollectionRow): Collection {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    width_mm: row.width_mm,
+    height_mm: row.height_mm,
+    font_family: row.font_family,
+    header_color: row.header_color,
+    background_color: row.background_color,
+    font_color: row.font_color,
+    header_font_color: row.header_font_color,
+    header_text_left: row.header_text_left ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
 
 export async function getCollections(): Promise<Collection[]> {
-  return apiRequest<Collection[]>('/collections/');
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data as CollectionRow[] | null) ?? []).map(mapCollection);
 }
 
 export async function getCollection(id: number): Promise<Collection> {
-  return apiRequest<Collection>(`/collections/${id}/`);
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Collection not found');
+  }
+
+  return mapCollection(data as CollectionRow);
 }
 
 export async function createCollection(data: {
@@ -21,10 +67,30 @@ export async function createCollection(data: {
   header_font_color?: string;
   header_text_left?: string;
 }): Promise<Collection> {
-  return apiRequest<Collection>('/collections/', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  const payload: CollectionInsert = {
+    title: data.title,
+    description: data.description ?? null,
+    width_mm: data.width_mm,
+    height_mm: data.height_mm,
+    font_family: data.font_family,
+    header_color: data.header_color,
+    background_color: data.background_color,
+    font_color: data.font_color,
+    header_font_color: data.header_font_color,
+    header_text_left: data.header_text_left ?? null,
+  };
+
+  const { data: inserted, error } = await supabase
+    .from('collections')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapCollection(inserted as CollectionRow);
 }
 
 export async function updateCollection(
@@ -42,14 +108,37 @@ export async function updateCollection(
     header_text_left?: string;
   }>
 ): Promise<Collection> {
-  return apiRequest<Collection>(`/collections/${id}/`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+  const payload: CollectionUpdate = {
+    title: data.title,
+    description: data.description ?? null,
+    width_mm: data.width_mm,
+    height_mm: data.height_mm,
+    font_family: data.font_family,
+    header_color: data.header_color,
+    background_color: data.background_color,
+    font_color: data.font_color,
+    header_font_color: data.header_font_color,
+    header_text_left: data.header_text_left ?? null,
+  };
+
+  const { data: updated, error } = await supabase
+    .from('collections')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapCollection(updated as CollectionRow);
 }
 
 export async function deleteCollection(id: number): Promise<void> {
-  return apiRequest<void>(`/collections/${id}/`, {
-    method: 'DELETE',
-  });
+  const { error } = await supabase.from('collections').delete().eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

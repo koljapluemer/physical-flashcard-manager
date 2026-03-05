@@ -1,13 +1,56 @@
-import { apiRequest } from './client';
+import { supabase } from './supabase';
 import type { Flashcard } from '../types';
+import type { Database } from './supabase';
+
+type FlashcardRow = Database['public']['Tables']['flashcards']['Row'];
+type FlashcardInsert = Database['public']['Tables']['flashcards']['Insert'];
+type FlashcardUpdate = Database['public']['Tables']['flashcards']['Update'];
+
+function mapFlashcard(row: FlashcardRow): Flashcard {
+  return {
+    id: row.id,
+    collection: row.collection_id,
+    front: row.front,
+    back: row.back,
+    header_right: row.header_right ?? undefined,
+    is_info_card: row.is_info_card,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
 
 export async function getFlashcards(collectionId?: number): Promise<Flashcard[]> {
-  const url = collectionId ? `/flashcards/?collection=${collectionId}` : '/flashcards/';
-  return apiRequest<Flashcard[]>(url);
+  let query = supabase.from('flashcards').select('*').order('id', { ascending: true });
+
+  if (collectionId) {
+    query = query.eq('collection_id', collectionId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return ((data as FlashcardRow[] | null) ?? []).map(mapFlashcard);
 }
 
 export async function getFlashcard(id: number): Promise<Flashcard> {
-  return apiRequest<Flashcard>(`/flashcards/${id}/`);
+  const { data, error } = await supabase
+    .from('flashcards')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Flashcard not found');
+  }
+
+  return mapFlashcard(data as FlashcardRow);
 }
 
 export async function createFlashcard(data: {
@@ -17,24 +60,56 @@ export async function createFlashcard(data: {
   header_right?: string;
   is_info_card?: boolean;
 }): Promise<Flashcard> {
-  return apiRequest<Flashcard>('/flashcards/', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  const payload: FlashcardInsert = {
+    collection_id: data.collection,
+    front: data.front,
+    back: data.back,
+    header_right: data.header_right ?? null,
+    is_info_card: data.is_info_card ?? false,
+  };
+
+  const { data: inserted, error } = await supabase
+    .from('flashcards')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapFlashcard(inserted as FlashcardRow);
 }
 
 export async function updateFlashcard(
   id: number,
   data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean }>
 ): Promise<Flashcard> {
-  return apiRequest<Flashcard>(`/flashcards/${id}/`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+  const payload: FlashcardUpdate = {
+    front: data.front,
+    back: data.back,
+    header_right: data.header_right ?? null,
+    is_info_card: data.is_info_card,
+  };
+
+  const { data: updated, error } = await supabase
+    .from('flashcards')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapFlashcard(updated as FlashcardRow);
 }
 
 export async function deleteFlashcard(id: number): Promise<void> {
-  return apiRequest<void>(`/flashcards/${id}/`, {
-    method: 'DELETE',
-  });
+  const { error } = await supabase.from('flashcards').delete().eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

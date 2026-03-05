@@ -7,8 +7,8 @@ const settingsStore = useSettingsStore();
 const authStore = useAuthStore();
 const router = useRouter();
 
-const handleLogout = () => {
-  authStore.logout();
+const handleLogout = async () => {
+  await authStore.logout();
   router.push({ name: 'login' });
 };
 </script>
