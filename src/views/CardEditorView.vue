@@ -3,11 +3,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
+import { parseCardSide, serializeCardSide, emptyCardSide, LAYOUT_LABELS, LAYOUT_SECTIONS } from '../utils/cardSide';
 import CardPreview from '../components/CardPreview.vue';
 import CardChatPane from '../components/CardChatPane.vue';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
-import type { Collection, Flashcard } from '../types';
+import type { Collection, Flashcard, CardSideData, CardLayout } from '../types';
 
 const props = defineProps<{
   id: string;
@@ -19,10 +20,11 @@ const router = useRouter();
 const collection = ref<Collection | null>(null);
 const card = ref<Flashcard | null>(null);
 const saveLoading = ref(false);
-const frontMarkdown = ref('');
-const backMarkdown = ref('');
+const frontSide = ref<CardSideData>(emptyCardSide('default'));
+const backSide = ref<CardSideData>(emptyCardSide('default'));
 const headerRight = ref('');
 const isInfoCard = ref(false);
+const activeTab = ref<'front' | 'back'>('front');
 
 const isNew = computed(() => props.cardId === 'new');
 
@@ -34,6 +36,28 @@ const editorThemeStyle = computed(() => {
     '--box-border-color': hexToRgba(headerColor, 0.16),
     '--font-family': getFontCSSValue(collection.value?.font_family ?? 'Arial'),
   };
+});
+
+const frontLayout = computed({
+  get: () => frontSide.value.layout,
+  set: (v: CardLayout) => {
+    const newSections: Record<string, string> = {};
+    for (const key of LAYOUT_SECTIONS[v]) {
+      newSections[key] = frontSide.value.sections[key] ?? '';
+    }
+    frontSide.value = { layout: v, sections: newSections };
+  },
+});
+
+const backLayout = computed({
+  get: () => backSide.value.layout,
+  set: (v: CardLayout) => {
+    const newSections: Record<string, string> = {};
+    for (const key of LAYOUT_SECTIONS[v]) {
+      newSections[key] = backSide.value.sections[key] ?? '';
+    }
+    backSide.value = { layout: v, sections: newSections };
+  },
 });
 
 watch(
@@ -56,14 +80,14 @@ async function loadData() {
       const cardIdNum = parseInt(props.cardId, 10);
       card.value = await flashcardsApi.getFlashcard(cardIdNum);
 
-      frontMarkdown.value = card.value.front || '';
-      backMarkdown.value = card.value.back || '';
+      frontSide.value = parseCardSide(card.value.front || '');
+      backSide.value = parseCardSide(card.value.back || '');
       headerRight.value = card.value.header_right || '';
       isInfoCard.value = card.value.is_info_card ?? false;
     } else {
       card.value = null;
-      frontMarkdown.value = '';
-      backMarkdown.value = '';
+      frontSide.value = emptyCardSide('default');
+      backSide.value = emptyCardSide('default');
       headerRight.value = '';
       isInfoCard.value = false;
     }
@@ -90,16 +114,16 @@ async function handleSave() {
     if (isNew.value) {
       await flashcardsApi.createFlashcard({
         collection: collectionId,
-        front: frontMarkdown.value,
-        back: backMarkdown.value,
+        front: serializeCardSide(frontSide.value),
+        back: serializeCardSide(backSide.value),
         header_right: headerRight.value.trim() || undefined,
         is_info_card: isInfoCard.value,
       });
     } else {
       const cardIdNum = parseInt(props.cardId, 10);
       await flashcardsApi.updateFlashcard(cardIdNum, {
-        front: frontMarkdown.value,
-        back: backMarkdown.value,
+        front: serializeCardSide(frontSide.value),
+        back: serializeCardSide(backSide.value),
         header_right: headerRight.value.trim() || undefined,
         is_info_card: isInfoCard.value,
       });
@@ -116,9 +140,9 @@ function fillHeaderRight(text: string) {
   headerRight.value = text;
 }
 
-function applyAiSuggestion(payload: { front: string; back: string; header_right?: string }) {
-  frontMarkdown.value = payload.front;
-  backMarkdown.value = payload.back;
+function applyAiSuggestion(payload: { front: CardSideData; back: CardSideData; header_right?: string }) {
+  frontSide.value = payload.front;
+  backSide.value = payload.back;
   headerRight.value = payload.header_right?.trim() || '';
 }
 </script>
@@ -154,6 +178,187 @@ Content here
       </div>
     </details>
 
+    <!-- Always-visible previews -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <p class="text-sm font-semibold mb-2 text-base-content/70">Front Preview</p>
+        <CardPreview
+          :sideData="frontSide"
+          side="front"
+          :collection="collection ?? undefined"
+          :flashcard="{ header_right: headerRight } as any"
+          :scale="0.35"
+        />
+      </div>
+      <div>
+        <p class="text-sm font-semibold mb-2 text-base-content/70">Back Preview</p>
+        <CardPreview
+          :sideData="backSide"
+          side="back"
+          :collection="collection ?? undefined"
+          :scale="0.35"
+        />
+      </div>
+    </div>
+
+    <!-- Tabbed editor -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body">
+        <div role="tablist" class="tabs tabs-bordered mb-4">
+          <button
+            role="tab"
+            class="tab"
+            :class="{ 'tab-active': activeTab === 'front' }"
+            type="button"
+            @click="activeTab = 'front'"
+          >Front</button>
+          <button
+            role="tab"
+            class="tab"
+            :class="{ 'tab-active': activeTab === 'back' }"
+            type="button"
+            @click="activeTab = 'back'"
+          >Back</button>
+        </div>
+
+        <!-- Front tab -->
+        <div v-show="activeTab === 'front'" class="space-y-4">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Layout</legend>
+            <select v-model="frontLayout" class="select select-bordered">
+              <option v-for="(label, key) in LAYOUT_LABELS" :key="key" :value="key">{{ label }}</option>
+            </select>
+          </fieldset>
+
+          <template v-if="frontSide.layout === 'default'">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Content</legend>
+              <textarea
+                v-model="frontSide.sections.main"
+                class="textarea textarea-bordered w-full h-48 font-mono"
+                placeholder="Enter markdown..."
+              />
+            </fieldset>
+          </template>
+
+          <template v-else-if="frontSide.layout === '2-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Left column</legend>
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Left column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Right column</legend>
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Right column..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="frontSide.layout === 'top-row-2-columns'">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Top row</legend>
+              <textarea v-model="frontSide.sections.top" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Top row..." />
+            </fieldset>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Bottom left</legend>
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom left..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Bottom right</legend>
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom right..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="frontSide.layout === 'bottom-row-2-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Top left</legend>
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top left..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Top right</legend>
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top right..." />
+              </fieldset>
+            </div>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Bottom row</legend>
+              <textarea v-model="frontSide.sections.bottom" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Bottom row..." />
+            </fieldset>
+          </template>
+        </div>
+
+        <!-- Back tab -->
+        <div v-show="activeTab === 'back'" class="space-y-4">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend">Layout</legend>
+            <select v-model="backLayout" class="select select-bordered">
+              <option v-for="(label, key) in LAYOUT_LABELS" :key="key" :value="key">{{ label }}</option>
+            </select>
+          </fieldset>
+
+          <template v-if="backSide.layout === 'default'">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Content</legend>
+              <textarea
+                v-model="backSide.sections.main"
+                class="textarea textarea-bordered w-full h-48 font-mono"
+                placeholder="Enter markdown..."
+              />
+            </fieldset>
+          </template>
+
+          <template v-else-if="backSide.layout === '2-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Left column</legend>
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Left column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Right column</legend>
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Right column..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="backSide.layout === 'top-row-2-columns'">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Top row</legend>
+              <textarea v-model="backSide.sections.top" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Top row..." />
+            </fieldset>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Bottom left</legend>
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom left..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Bottom right</legend>
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom right..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="backSide.layout === 'bottom-row-2-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Top left</legend>
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top left..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Top right</legend>
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top right..." />
+              </fieldset>
+            </div>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend">Bottom row</legend>
+              <textarea v-model="backSide.sections.bottom" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Bottom row..." />
+            </fieldset>
+          </template>
+        </div>
+      </div>
+    </div>
+
     <div class="card bg-base-100 shadow">
       <div class="card-body">
         <h2 class="card-title text-xl mb-2">Card Settings</h2>
@@ -186,61 +391,6 @@ Content here
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <div class="space-y-4">
-        <div class="card bg-base-100 shadow">
-          <div class="card-body space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="card-title text-xl">Front</h2>
-            </div>
-            <textarea
-              v-model="frontMarkdown"
-              class="textarea textarea-bordered w-full h-48 font-mono"
-              placeholder="Enter markdown..."
-            />
-          </div>
-        </div>
-
-        <div class="card bg-base-100 shadow">
-          <div class="card-body space-y-3">
-            <h3 class="card-title text-lg">Front Preview</h3>
-            <CardPreview
-              :markdown="frontMarkdown"
-              side="front"
-              :collection="collection ?? undefined"
-              :flashcard="{ header_right: headerRight } as any"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="space-y-4">
-        <div class="card bg-base-100 shadow">
-          <div class="card-body space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="card-title text-xl">Back</h2>
-            </div>
-            <textarea
-              v-model="backMarkdown"
-              class="textarea textarea-bordered w-full h-48 font-mono"
-              placeholder="Enter markdown..."
-            />
-          </div>
-        </div>
-
-        <div class="card bg-base-100 shadow">
-          <div class="card-body space-y-3">
-            <h3 class="card-title text-lg">Back Preview</h3>
-            <CardPreview
-              :markdown="backMarkdown"
-              side="back"
-              :collection="collection ?? undefined"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="flex flex-wrap gap-3">
       <button class="btn btn-primary" type="button" @click="handleSave" :disabled="saveLoading">
         <span v-if="saveLoading" class="loading loading-spinner loading-xs mr-2"></span>
@@ -251,8 +401,8 @@ Content here
 
     <CardChatPane
       :collection="collection"
-      :front-markdown="frontMarkdown"
-      :back-markdown="backMarkdown"
+      :front-side="frontSide"
+      :back-side="backSide"
       :header-right="headerRight"
       @apply-suggestion="applyAiSuggestion"
     />

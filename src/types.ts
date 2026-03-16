@@ -1,3 +1,10 @@
+export type CardLayout = 'default' | '2-columns' | 'top-row-2-columns' | 'bottom-row-2-columns';
+
+export interface CardSideData {
+  layout: CardLayout;
+  sections: Record<string, string>;
+}
+
 export interface Collection {
   id: number;
   title: string;

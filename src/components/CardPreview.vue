@@ -4,12 +4,14 @@ import { useSettingsStore } from '../stores/settings';
 import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
-import type { Collection, Flashcard } from '../types';
+import { parseCardSide } from '../utils/cardSide';
+import type { Collection, Flashcard, CardSideData } from '../types';
 import '../styles/cardPreview.css';
 
 const props = withDefaults(
   defineProps<{
     markdown?: string;
+    sideData?: CardSideData;
     side?: 'front' | 'back';
     collection?: Collection;
     flashcard?: Flashcard;
@@ -65,26 +67,27 @@ const cardStyle = computed(() => {
 
 const resolvedSide = computed(() => (props.frontOnly ? 'front' : props.side));
 
-const renderedHtml = ref('');
+const resolvedSideData = computed<CardSideData>(() => {
+  if (props.sideData) return props.sideData;
+  if (props.useDemoValues) {
+    const fallback = resolvedSide.value === 'front' ? props.demoFrontMarkdown! : props.demoBackMarkdown!;
+    return { layout: 'default', sections: { main: fallback } };
+  }
+  return parseCardSide(props.markdown ?? '');
+});
+
+const renderedSections = ref<Record<string, string>>({});
 
 watch(
-  [
-    () => props.markdown,
-    () => props.useDemoValues,
-    resolvedSide,
-    () => props.demoFrontMarkdown,
-    () => props.demoBackMarkdown,
-  ],
-  async () => {
-    const content = props.markdown?.trim();
-    if (content) {
-      renderedHtml.value = await markdownToHtml(content);
-    } else if (props.useDemoValues) {
-      const fallback = resolvedSide.value === 'front' ? props.demoFrontMarkdown : props.demoBackMarkdown;
-      renderedHtml.value = await markdownToHtml(fallback);
-    } else {
-      renderedHtml.value = '';
-    }
+  resolvedSideData,
+  async (data) => {
+    const rendered: Record<string, string> = {};
+    await Promise.all(
+      Object.entries(data.sections).map(async ([key, content]) => {
+        rendered[key] = content.trim() ? await markdownToHtml(content) : '';
+      })
+    );
+    renderedSections.value = rendered;
   },
   { immediate: true }
 );
@@ -104,6 +107,90 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
       <span v-if="headerTextLeft" class="flashcard-header-left">{{ headerTextLeft }}</span>
       <span v-if="headerTextRight" class="flashcard-header-right">{{ headerTextRight }}</span>
     </div>
-    <div class="flashcard-preview-content" v-html="renderedHtml"></div>
+    <div class="flashcard-preview-content">
+      <!-- default: single column -->
+      <template v-if="resolvedSideData.layout === 'default'">
+        <div v-html="renderedSections.main ?? ''"></div>
+      </template>
+
+      <!-- 2-columns -->
+      <template v-else-if="resolvedSideData.layout === '2-columns'">
+        <div class="preview-layout-2col">
+          <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
+          <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+        </div>
+      </template>
+
+      <!-- top-row-2-columns -->
+      <template v-else-if="resolvedSideData.layout === 'top-row-2-columns'">
+        <div class="preview-layout-top2col">
+          <div class="preview-top-row" v-html="renderedSections.top ?? ''"></div>
+          <div class="preview-2col-row">
+            <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
+            <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+          </div>
+        </div>
+      </template>
+
+      <!-- bottom-row-2-columns -->
+      <template v-else-if="resolvedSideData.layout === 'bottom-row-2-columns'">
+        <div class="preview-layout-bottom2col">
+          <div class="preview-2col-row">
+            <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
+            <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+          </div>
+          <div class="preview-bottom-row" v-html="renderedSections.bottom ?? ''"></div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.preview-layout-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+}
+
+.preview-layout-top2col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-layout-bottom2col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-2col-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.preview-top-row {
+  border-bottom: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.preview-bottom-row {
+  border-top: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
+  padding-top: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.preview-col {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.preview-col-right {
+  border-left: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
+  padding-left: 0.5rem;
+}
+</style>

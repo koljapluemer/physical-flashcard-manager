@@ -3,11 +3,61 @@ import cardContentCss from '../styles/cardContent.css?raw';
 import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, isSystemFont, loadGoogleFont } from '../utils/fonts';
+import { parseCardSide } from '../utils/cardSide';
 import type { Collection, Flashcard } from '../types';
 
+async function buildLayoutContentHtml(sideData: ReturnType<typeof parseCardSide>): Promise<string> {
+  const { layout, sections } = sideData;
+
+  const rendered: Record<string, string> = {};
+  await Promise.all(
+    Object.entries(sections).map(async ([key, content]) => {
+      rendered[key] = content.trim() ? await markdownToHtml(content) : '';
+    })
+  );
+
+  if (layout === 'default') {
+    return rendered.main ?? '';
+  }
+
+  const colSep = `border-left:1px solid rgba(0,0,0,0.12);padding-left:8px;min-width:0;overflow:hidden;`;
+  const colBase = `min-width:0;overflow:hidden;`;
+  const rowSep = `border-bottom:1px solid rgba(0,0,0,0.12);padding-bottom:6px;margin-bottom:6px;`;
+  const rowSepTop = `border-top:1px solid rgba(0,0,0,0.12);padding-top:6px;margin-top:6px;`;
+
+  if (layout === '2-columns') {
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;height:100%;">
+      <div style="${colBase}">${rendered.left ?? ''}</div>
+      <div style="${colSep}">${rendered.right ?? ''}</div>
+    </div>`;
+  }
+
+  if (layout === 'top-row-2-columns') {
+    return `<div style="display:flex;flex-direction:column;height:100%;">
+      <div style="${rowSep}">${rendered.top ?? ''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;">
+        <div style="${colBase}">${rendered.left ?? ''}</div>
+        <div style="${colSep}">${rendered.right ?? ''}</div>
+      </div>
+    </div>`;
+  }
+
+  if (layout === 'bottom-row-2-columns') {
+    return `<div style="display:flex;flex-direction:column;height:100%;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;">
+        <div style="${colBase}">${rendered.left ?? ''}</div>
+        <div style="${colSep}">${rendered.right ?? ''}</div>
+      </div>
+      <div style="${rowSepTop}">${rendered.bottom ?? ''}</div>
+    </div>`;
+  }
+
+  return '';
+}
+
 async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: Collection): Promise<string> {
-  const markdownContent = side === 'front' ? card.front : card.back;
-  const renderedContent = await markdownToHtml(markdownContent);
+  const rawContent = side === 'front' ? card.front : card.back;
+  const sideData = parseCardSide(rawContent);
 
   const headerColor = normalizeHexColor(collection.header_color);
   const boxBgColor = hexToRgba(headerColor, 0.08);
@@ -20,6 +70,7 @@ async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collec
   const headerTextRight = side === 'front' ? (card.header_right ?? '') : '';
 
   const showHeader = headerTextLeft || headerTextRight;
+  const layoutHtml = await buildLayoutContentHtml(sideData);
 
   return `
     <div
@@ -42,7 +93,7 @@ async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collec
         </div>
       ` : ''}
       <div class="flashcard-preview-content pdf-flashcard-content" style="color: ${fontColor};">
-        ${renderedContent}
+        ${layoutHtml}
       </div>
     </div>
   `;

@@ -4,19 +4,24 @@ import { RouterLink } from 'vue-router';
 import { Check, Loader2, MessageCircle, Send, Sparkles, X } from 'lucide-vue-next';
 import CardPreview from './CardPreview.vue';
 import * as flashcardsApi from '../api/flashcards';
-import type { Collection, Flashcard } from '../types';
+import type { Collection, Flashcard, CardSideData } from '../types';
+import { parseCardSide } from '../utils/cardSide';
 import { useSettingsStore } from '../stores/settings';
 import { useToastStore } from '../stores/toast';
 
 type ProposedCard = {
-  front: string;
-  back: string;
+  front: CardSideData;
+  back: CardSideData;
   header_right?: string;
 };
 
 type AiResponse = {
   reply?: string;
-  card?: ProposedCard;
+  card?: {
+    front?: unknown;
+    back?: unknown;
+    header_right?: string;
+  };
 };
 
 type ProposalStatus = 'pending' | 'accepted' | 'dismissed';
@@ -31,13 +36,13 @@ type ChatMessage = {
 
 const props = defineProps<{
   collection: Collection | null;
-  frontMarkdown: string;
-  backMarkdown: string;
+  frontSide: CardSideData;
+  backSide: CardSideData;
   headerRight: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'applySuggestion', payload: { front: string; back: string; header_right?: string }): void;
+  (e: 'applySuggestion', payload: { front: CardSideData; back: CardSideData; header_right?: string }): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -89,13 +94,6 @@ function extractJson(text: string) {
   return text.trim();
 }
 
-function truncateText(text: string, maxLength = 600) {
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return '';
-  }
-  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}…` : trimmed;
-}
 
 function buildMessages(prompt: string) {
   const contextPayload = {
@@ -108,14 +106,14 @@ function buildMessages(prompt: string) {
         }
       : null,
     current_card: {
-      front: truncateText(props.frontMarkdown),
-      back: truncateText(props.backMarkdown),
+      front: props.frontSide,
+      back: props.backSide,
       header_right: props.headerRight,
     },
     examples: flashcardContext.value.slice(0, 4).map((item) => ({
       id: item.id,
-      front: truncateText(item.front, 240),
-      back: truncateText(item.back, 240),
+      front: parseCardSide(item.front),
+      back: parseCardSide(item.back),
       header_right: item.header_right,
     })),
   };
@@ -128,7 +126,13 @@ function buildMessages(prompt: string) {
   const systemContent = [
     'You help edit flashcards for a physical flashcard app.',
     'Always respond with JSON only, no Markdown fences.',
-    'Schema: {"reply":"short chat reply","card":{"front":"markdown","back":"markdown","header_right":"optional"}}',
+    'Each card side has a layout and sections. Preserve the existing layout unless the user asks to change it.',
+    'Schema: {"reply":"short chat reply","card":{"front":{"layout":"default","sections":{"main":"markdown"}},"back":{"layout":"default","sections":{"main":"markdown"}},"header_right":"optional"}}',
+    'Layout types and their section keys:',
+    '  "default": sections = {"main": "..."}',
+    '  "2-columns": sections = {"left": "...", "right": "..."}',
+    '  "top-row-2-columns": sections = {"top": "...", "left": "...", "right": "..."}',
+    '  "bottom-row-2-columns": sections = {"left": "...", "right": "...", "bottom": "..."}',
     'Markdown format rules:',
     '- Use **bold**, *italic*, # headings, - bullets, 1. numbered lists',
     '- Math: use $E = mc^2$ for inline math (single dollar signs)',
@@ -204,7 +208,14 @@ async function sendMessage() {
     try {
       parsed = JSON.parse(parsedText) as AiResponse;
       replyText = parsed.reply || 'Proposed changes ready.';
-      card = parsed.card;
+
+      if (parsed.card?.front && parsed.card?.back) {
+        const front = parsed.card.front as CardSideData;
+        const back = parsed.card.back as CardSideData;
+        if (front.layout && front.sections && back.layout && back.sections) {
+          card = { front, back, header_right: parsed.card.header_right };
+        }
+      }
     } catch (jsonError) {
       // JSON parsing failed - log details for debugging
       console.error('JSON Parse Error:', jsonError);
@@ -227,8 +238,8 @@ async function sendMessage() {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: replyText,
-      proposal: card?.front && card?.back ? card : undefined,
-      proposalStatus: card?.front && card?.back ? 'pending' : undefined,
+      proposal: card,
+      proposalStatus: card ? 'pending' : undefined,
     };
 
     messages.value = [...messages.value, assistantMessage];
@@ -252,6 +263,7 @@ function applyProposal(message: ChatMessage) {
     back: message.proposal.back,
     header_right: message.proposal.header_right,
   });
+
 
   message.proposalStatus = 'accepted';
 }
@@ -309,7 +321,7 @@ function dismissProposal(message: ChatMessage) {
                 <div class="rounded border border-base-300 p-2">
                   <p class="font-medium mb-2">Front</p>
                   <CardPreview
-                    :markdown="message.proposal.front"
+                    :sideData="message.proposal.front"
                     side="front"
                     :collection="collection ?? undefined"
                     :flashcard="{ header_right: message.proposal.header_right } as any"
@@ -319,7 +331,7 @@ function dismissProposal(message: ChatMessage) {
                 <div class="rounded border border-base-300 p-2">
                   <p class="font-medium mb-2">Back</p>
                   <CardPreview
-                    :markdown="message.proposal.back"
+                    :sideData="message.proposal.back"
                     side="back"
                     :collection="collection ?? undefined"
                     :scale="0.9"
