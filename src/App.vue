@@ -9,25 +9,21 @@ const route = useRoute();
 
 <template>
   <div class="min-h-screen bg-base-200 text-base-content">
-    <nav class="navbar bg-base-100 border-b border-base-300">
-      <div class="flex-1">
-        <RouterLink class="btn  text-xl normal-case" to="/collections">
-          Flashcard Manager
-        </RouterLink>
-      </div>
-      <div class="flex-none flex gap-2">
+    <nav class="navbar">
+      <RouterLink class="nav-brand" to="/collections">Flashcard Manager</RouterLink>
+      <div class="flex-none flex">
         <RouterLink
-          class="btn"
+          class="nav-link"
           to="/collections"
-          :class="{ 'btn-active': route.path.startsWith('/collections') }"
+          :class="{ 'nav-link-active': route.path.startsWith('/collections') }"
         >
           Collections
         </RouterLink>
         <RouterLink
           v-if="authStore.isAuthenticated"
-          class="btn"
+          class="nav-link"
           to="/settings"
-          :class="{ 'btn-active': route.path === '/settings' }"
+          :class="{ 'nav-link-active': route.path === '/settings' }"
         >
           Settings
         </RouterLink>

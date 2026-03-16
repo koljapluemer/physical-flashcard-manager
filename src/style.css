@@ -34,7 +34,7 @@ body,
 body {
   margin: 0;
   font-family: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  background: radial-gradient(circle at top right, #eef3ff 0%, var(--bg) 36%, #f8fafc 100%);
+  background: var(--bg);
   color: var(--text);
   line-height: 1.5;
 }
@@ -173,12 +173,55 @@ pre {
 
 /* App shell */
 .navbar {
-  padding: 0.75rem 1.25rem;
-  background: color-mix(in srgb, var(--surface) 94%, #edf2fb);
-  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  height: 3rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 40;
+}
+
+.nav-brand {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  padding-right: 1.25rem;
+  margin-right: 0.75rem;
+  border-right: 1px solid var(--border);
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.nav-brand:hover {
+  color: var(--primary);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 120ms ease, border-color 120ms ease;
+  box-sizing: border-box;
+}
+
+.nav-link:hover {
+  color: var(--text);
+}
+
+.nav-link-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .bg-base-100 { background: var(--surface); }
@@ -230,13 +273,13 @@ pre {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #2a63ea 0%, var(--primary) 100%);
+  background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(180deg, #1f54d2 0%, var(--primary-strong) 100%);
+  background: var(--primary-strong);
   border-color: var(--primary-strong);
 }
 
@@ -291,7 +334,59 @@ pre {
 
 .btn-group {
   display: inline-flex;
-  gap: 0.4rem;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.btn-group .btn:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.btn-group .btn:last-child {
+  border-radius: 0 10px 10px 0;
+  border-right-width: 1px;
+}
+
+.btn-group .btn:only-child {
+  border-radius: 10px;
+  border-right-width: 1px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tabs-bordered {
+  /* border already on .tabs */
 }
 
 /* Form controls */
@@ -353,14 +448,52 @@ pre {
 }
 
 .checkbox,
-.radio,
-.toggle {
+.radio {
   accent-color: var(--primary);
 }
 
+/* Custom toggle switch */
 .toggle {
-  width: 2.15rem;
-  height: 1.2rem;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  display: inline-block;
+  width: 2.4rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.35rem - 6px);
+  height: calc(1.35rem - 6px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: transform 150ms ease;
+}
+
+.toggle:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle:checked::after {
+  transform: translateX(calc(2.4rem - 1.35rem));
+}
+
+.toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  outline-offset: 2px;
 }
 
 /* Tables */
@@ -480,19 +613,90 @@ pre {
 /* Collapse */
 .collapse {
   padding: 0;
+  position: relative;
 }
 
-.collapse > input {
-  display: none;
+/*
+ * The checkbox is positioned to cover the title row so clicking
+ * the title toggles the checkbox (no JS needed, no label association).
+ */
+.collapse > input[type="checkbox"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 3.6rem; /* covers collapse-title row */
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
 }
 
 .collapse-title {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1rem 0.9rem 3rem;
+  position: relative;
 }
 
+/* Chevron arrow for .collapse-arrow variant */
+.collapse-arrow > .collapse-title::before,
+.collapse-arrow > summary.collapse-title::before {
+  content: '';
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+  transition: transform 200ms ease;
+}
+
+/* Content hidden by default */
 .collapse-content {
+  display: none;
   padding: 0.9rem 1rem 1rem;
+}
+
+/* Open state — checkbox checked */
+.collapse > input[type="checkbox"]:checked ~ .collapse-content {
+  display: block;
+}
+
+.collapse > input[type="checkbox"]:checked ~ .collapse-title::before {
+  transform: translateY(-50%) rotate(0deg);
+}
+
+/* details/summary variant (CardEditorView Markdown Tips) */
+details.collapse {
+  padding: 0;
+}
+
+details.collapse > summary.collapse-title {
+  list-style: none;
+  cursor: pointer;
+}
+
+details.collapse > summary.collapse-title::-webkit-details-marker {
+  display: none;
+}
+
+details.collapse > .collapse-content {
+  padding: 0.9rem 1rem 1rem;
+}
+
+/* Override our own display:none when details is open */
+details.collapse[open] > .collapse-content {
+  display: block;
+}
+
+details.collapse[open] > summary.collapse-title::before {
+  transform: translateY(-50%) rotate(0deg);
+}
+
+details.collapse:not([open]) > summary.collapse-title::before {
+  transform: translateY(-50%) rotate(-90deg);
 }
 
 /* Modal and dialog */
@@ -501,6 +705,9 @@ pre {
   padding: 0;
   width: min(96vw, 74rem);
   background: transparent;
+  margin: auto;
+  max-height: calc(100vh - 2rem);
+  overflow: visible;
 }
 
 .modal::backdrop {
@@ -508,6 +715,7 @@ pre {
   backdrop-filter: blur(1.5px);
 }
 
+/* Legacy non-dialog overlay */
 .modal-open {
   display: grid;
   place-items: center;
@@ -519,15 +727,19 @@ pre {
 }
 
 .modal-box {
+  position: relative;
+  z-index: 1;
   width: min(96vw, 64rem);
   max-height: calc(100vh - 2rem);
   overflow: auto;
   padding: 1rem;
 }
 
+/* Click-outside close form — behind modal-box */
 .modal-backdrop {
   position: fixed;
   inset: 0;
+  z-index: 0;
 }
 
 /* Toasts */
