@@ -173,13 +173,11 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
 }
 
 .preview-top-row {
-  border-bottom: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
   padding-bottom: 0.4rem;
   margin-bottom: 0.4rem;
 }
 
 .preview-bottom-row {
-  border-top: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
   padding-top: 0.4rem;
   margin-top: 0.4rem;
 }
@@ -190,7 +188,6 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
 }
 
 .preview-col-right {
-  border-left: 1px solid var(--box-border-color, rgba(0, 0, 0, 0.12));
   padding-left: 0.5rem;
 }
 </style>

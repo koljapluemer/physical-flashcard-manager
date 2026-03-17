@@ -21,10 +21,10 @@ async function buildLayoutContentHtml(sideData: ReturnType<typeof parseCardSide>
     return rendered.main ?? '';
   }
 
-  const colSep = `border-left:1px solid rgba(0,0,0,0.12);padding-left:8px;min-width:0;overflow:hidden;`;
+  const colSep = `padding-left:8px;min-width:0;overflow:hidden;`;
   const colBase = `min-width:0;overflow:hidden;`;
-  const rowSep = `border-bottom:1px solid rgba(0,0,0,0.12);padding-bottom:6px;margin-bottom:6px;`;
-  const rowSepTop = `border-top:1px solid rgba(0,0,0,0.12);padding-top:6px;margin-top:6px;`;
+  const rowSep = `padding-bottom:6px;margin-bottom:6px;`;
+  const rowSepTop = `padding-top:6px;margin-top:6px;`;
 
   if (layout === '2-columns') {
     return `<div style="display:grid;grid-template-columns:1fr 1fr;">

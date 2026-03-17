@@ -229,6 +229,35 @@ async function removeCollection() {
   }
 }
 
+async function swapCardOrder(indexA: number, indexB: number) {
+  const arr = [...cards.value];
+  const cardA = arr[indexA];
+  const cardB = arr[indexB];
+  const orderA = cardA.sort_order;
+  const orderB = cardB.sort_order;
+  arr[indexA] = { ...cardB, sort_order: orderA };
+  arr[indexB] = { ...cardA, sort_order: orderB };
+  cards.value = arr;
+  await Promise.all([
+    flashcardsApi.updateFlashcard(cardA.id, { sort_order: orderB }),
+    flashcardsApi.updateFlashcard(cardB.id, { sort_order: orderA }),
+  ]);
+}
+
+async function moveCardUp(cardId: number) {
+  const index = cards.value.findIndex(c => c.id === cardId);
+  if (index > 0) {
+    await swapCardOrder(index - 1, index);
+  }
+}
+
+async function moveCardDown(cardId: number) {
+  const index = cards.value.findIndex(c => c.id === cardId);
+  if (index !== -1 && index < cards.value.length - 1) {
+    await swapCardOrder(index, index + 1);
+  }
+}
+
 function toggleCardInclude(cardId: number) {
   if (includedCardIds.value.has(cardId)) {
     includedCardIds.value.delete(cardId);
@@ -274,6 +303,8 @@ function toggleCardInclude(cardId: number) {
         @delete="deleteCard"
         @create="createCard"
         @toggle-include="toggleCardInclude"
+        @move-up="moveCardUp"
+        @move-down="moveCardDown"
       />
 
       <CollectionCollapsibleDangerZone :loading="deletingCollection" @remove="removeCollection" />

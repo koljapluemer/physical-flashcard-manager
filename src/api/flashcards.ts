@@ -14,13 +14,14 @@ function mapFlashcard(row: FlashcardRow): Flashcard {
     back: row.back,
     header_right: row.header_right ?? undefined,
     is_info_card: row.is_info_card,
+    sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
 }
 
 export async function getFlashcards(collectionId?: number): Promise<Flashcard[]> {
-  let query = supabase.from('flashcards').select('*').order('id', { ascending: true });
+  let query = supabase.from('flashcards').select('*').order('sort_order', { ascending: true });
 
   if (collectionId) {
     query = query.eq('collection_id', collectionId);
@@ -78,18 +79,33 @@ export async function createFlashcard(data: {
     throw new Error(error.message);
   }
 
-  return mapFlashcard(inserted as FlashcardRow);
+  const insertedRow = inserted as FlashcardRow;
+
+  // Set sort_order = id so new cards appear at the end naturally
+  const { data: updated, error: updateError } = await supabase
+    .from('flashcards')
+    .update({ sort_order: insertedRow.id })
+    .eq('id', insertedRow.id)
+    .select('*')
+    .single();
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  return mapFlashcard(updated as FlashcardRow);
 }
 
 export async function updateFlashcard(
   id: number,
-  data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean }>
+  data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean; sort_order?: number }>
 ): Promise<Flashcard> {
   const payload: FlashcardUpdate = {
     front: data.front,
     back: data.back,
     header_right: data.header_right ?? null,
     is_info_card: data.is_info_card,
+    sort_order: data.sort_order,
   };
 
   const { data: updated, error } = await supabase

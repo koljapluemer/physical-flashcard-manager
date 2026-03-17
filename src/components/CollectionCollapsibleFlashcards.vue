@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Pencil, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-vue-next';
 import CardPreview from './CardPreview.vue';
 import type { Collection, Flashcard } from '../types';
 
@@ -19,6 +19,8 @@ const emit = defineEmits<{
   (e: 'delete', cardId: number): void;
   (e: 'create'): void;
   (e: 'toggleInclude', cardId: number): void;
+  (e: 'moveUp', cardId: number): void;
+  (e: 'moveDown', cardId: number): void;
 }>();
 
 function isIncluded(cardId: number): boolean {
@@ -107,7 +109,27 @@ function toggleInclude(cardId: number): void {
               </td>
               <td class="align-top">
                 <div class="flex justify-end gap-2">
-                  <button class="btn btn-square  btn-sm" type="button" aria-label="Edit card"
+                  <div class="flex flex-col gap-1">
+                    <button
+                      class="btn btn-square btn-xs btn-ghost"
+                      type="button"
+                      aria-label="Move card up"
+                      :disabled="flashcards.indexOf(card) === 0"
+                      @click="emit('moveUp', card.id)"
+                    >
+                      <ChevronUp :size="14" />
+                    </button>
+                    <button
+                      class="btn btn-square btn-xs btn-ghost"
+                      type="button"
+                      aria-label="Move card down"
+                      :disabled="flashcards.indexOf(card) === flashcards.length - 1"
+                      @click="emit('moveDown', card.id)"
+                    >
+                      <ChevronDown :size="14" />
+                    </button>
+                  </div>
+                  <button class="btn btn-square btn-sm" type="button" aria-label="Edit card"
                     @click="emit('edit', card.id)">
                     <Pencil :size="16" />
                   </button>

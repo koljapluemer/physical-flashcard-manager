@@ -63,6 +63,7 @@ export type Database = {
           back: string;
           header_right: string | null;
           is_info_card: boolean;
+          sort_order: number;
           created_at: string;
           updated_at: string;
         };
@@ -74,6 +75,7 @@ export type Database = {
           back: string;
           header_right?: string | null;
           is_info_card?: boolean;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -85,6 +87,7 @@ export type Database = {
           back?: string;
           header_right?: string | null;
           is_info_card?: boolean;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };
