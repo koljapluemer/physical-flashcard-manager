@@ -89,7 +89,7 @@ watch(
     );
     renderedSections.value = rendered;
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 );
 
 const headerTextLeft = computed(() => props.collection?.header_text_left ?? '');

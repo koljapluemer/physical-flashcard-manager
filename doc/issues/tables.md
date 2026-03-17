@@ -1,0 +1,1 @@
+## Allow Markdown tables on cards, following standard syntax
