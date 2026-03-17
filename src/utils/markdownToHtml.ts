@@ -2,6 +2,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
 import remarkDirective from 'remark-directive';
+import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
@@ -22,6 +23,7 @@ function remarkBoxPlugin() {
 
 const processor = unified()
   .use(remarkParse)
+  .use(remarkGfm)
   .use(remarkMath)
   .use(remarkDirective)
   .use(remarkBoxPlugin)
