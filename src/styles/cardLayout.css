@@ -1,0 +1,40 @@
+/* Shared card layout styles — used by both CardPreview and PDF render */
+
+.card-layout-2col {
+  display: grid;
+  grid-template-columns: minmax(min-content, 1fr) minmax(min-content, 1fr);
+  height: 100%;
+}
+
+.card-layout-top2col,
+.card-layout-bottom2col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-2col-row {
+  display: grid;
+  grid-template-columns: minmax(min-content, 1fr) minmax(min-content, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.card-top-row {
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.card-bottom-row {
+  padding-top: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.card-col {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.card-col-right {
+  padding-left: 0.5rem;
+}

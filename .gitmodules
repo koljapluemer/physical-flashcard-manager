@@ -1,0 +1,3 @@
+[submodule "physical-flashcard-doc"]
+	path = physical-flashcard-doc
+	url = git@github.com:koljapluemer/physical-flashcard-doc.git

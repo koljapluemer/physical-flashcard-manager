@@ -1,9 +1,8 @@
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import cardContentCss from '../styles/cardContent.css?raw';
+import cardLayoutCss from '../styles/cardLayout.css?raw';
 import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
-import { getFontCSSValue, isSystemFont, loadGoogleFont } from '../utils/fonts';
+import { getFontCSSValue, isSystemFont } from '../utils/fonts';
 import { parseCardSide } from '../utils/cardSide';
 import type { Collection, Flashcard } from '../types';
 
@@ -21,42 +20,37 @@ async function buildLayoutContentHtml(sideData: ReturnType<typeof parseCardSide>
     return rendered.main ?? '';
   }
 
-  const colSep = `padding-left:8px;min-width:0;overflow:hidden;`;
-  const colBase = `min-width:0;overflow:hidden;`;
-  const rowSep = `padding-bottom:6px;margin-bottom:6px;`;
-  const rowSepTop = `padding-top:6px;margin-top:6px;`;
-
   if (layout === '2-columns') {
-    return `<div style="display:grid;grid-template-columns:1fr 1fr;">
-      <div style="${colBase}">${rendered.left ?? ''}</div>
-      <div style="${colSep}">${rendered.right ?? ''}</div>
+    return `<div class="card-layout-2col">
+      <div class="card-col">${rendered.left ?? ''}</div>
+      <div class="card-col card-col-right">${rendered.right ?? ''}</div>
     </div>`;
   }
 
   if (layout === 'top-row-2-columns') {
-    return `<div>
-      <div style="${rowSep}">${rendered.top ?? ''}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;">
-        <div style="${colBase}">${rendered.left ?? ''}</div>
-        <div style="${colSep}">${rendered.right ?? ''}</div>
+    return `<div class="card-layout-top2col">
+      <div class="card-top-row">${rendered.top ?? ''}</div>
+      <div class="card-2col-row">
+        <div class="card-col">${rendered.left ?? ''}</div>
+        <div class="card-col card-col-right">${rendered.right ?? ''}</div>
       </div>
     </div>`;
   }
 
   if (layout === 'bottom-row-2-columns') {
-    return `<div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;">
-        <div style="${colBase}">${rendered.left ?? ''}</div>
-        <div style="${colSep}">${rendered.right ?? ''}</div>
+    return `<div class="card-layout-bottom2col">
+      <div class="card-2col-row">
+        <div class="card-col">${rendered.left ?? ''}</div>
+        <div class="card-col card-col-right">${rendered.right ?? ''}</div>
       </div>
-      <div style="${rowSepTop}">${rendered.bottom ?? ''}</div>
+      <div class="card-bottom-row">${rendered.bottom ?? ''}</div>
     </div>`;
   }
 
   return '';
 }
 
-async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collection: Collection): Promise<string> {
+async function buildCardHtml(card: Flashcard, side: 'front' | 'back', collection: Collection): Promise<string> {
   const rawContent = side === 'front' ? card.front : card.back;
   const sideData = parseCardSide(rawContent);
 
@@ -66,7 +60,10 @@ async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collec
   const backgroundColor = collection.background_color ?? '#f0f0f0';
   const fontColor = collection.font_color ?? '#171717';
   const headerFontColor = collection.header_font_color ?? '#ffffff';
-  const fontFamily = getFontCSSValue(collection.font_family ?? 'Arial');
+  // Replace double quotes with single quotes — fontFamily goes inside style="..."
+  // HTML attributes, and double-quoted font names like "Open Sans" would break
+  // the attribute boundary.
+  const fontFamily = getFontCSSValue(collection.font_family ?? 'Arial').replace(/"/g, "'");
   const headerTextLeft = collection.header_text_left ?? '';
   const headerTextRight = side === 'front' ? (card.header_right ?? '') : '';
 
@@ -93,88 +90,62 @@ async function buildCardPageHtml(card: Flashcard, side: 'front' | 'back', collec
           ${headerTextRight ? `<span class="pdf-flashcard-header-right">${headerTextRight}</span>` : ''}
         </div>
       ` : ''}
-      <div class="flashcard-preview-content pdf-flashcard-content" style="color: ${fontColor};">
+      <div class="flashcard-preview-content pdf-flashcard-content" style="color: ${fontColor}; font-family: ${fontFamily};">
         ${layoutHtml}
       </div>
     </div>
   `;
 }
 
-function buildRenderStyles(cardWidthMm: number, cardHeightMm: number): string {
-  const pxPerMm = 96 / 25.4;
-  const cardWidthPx = Math.round(cardWidthMm * pxPerMm);
-  const cardHeightPx = Math.round(cardHeightMm * pxPerMm);
-
-  return `
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-    }
-
-    .pdf-page {
-      width: ${cardWidthPx}px;
-      height: ${cardHeightPx}px;
-      overflow: hidden;
-      background: var(--background-color, #fff);
-    }
-
-    .pdf-flashcard {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: var(--background-color, #fff);
-    }
-
-    .pdf-flashcard-header {
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      font-size: 0.875rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .pdf-flashcard-header-left {
-      flex-shrink: 0;
-    }
-
-    .pdf-flashcard-header-right {
-      flex-shrink: 0;
-      margin-left: auto;
-    }
-
-    .pdf-flashcard-content {
-      width: 100%;
-      padding: 1rem;
-      overflow: hidden;
-      font-family: var(--font-family, Arial, sans-serif);
-      font-size: 14px;
-      line-height: 1.6;
-      text-align: left;
-      color: var(--font-color, #171717);
-      flex: 1 1 0;
-      min-height: 0;
-    }
-
-    ${cardContentCss}
-  `;
-}
-
-function buildHeadHtml(fontFamily?: string): string {
-  const fontLink = fontFamily && !isSystemFont(fontFamily)
+function buildHeadHtml(collection: Collection, cardWidthMm: number, cardHeightMm: number): string {
+  const fontFamily = collection.font_family ?? 'Arial';
+  const fontLink = !isSystemFont(fontFamily)
     ? `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fontFamily.replace(/\s+/g, '+')}:wght@400;600;700&display=swap" />`
     : '';
 
   return `
-    <meta charset="utf-8" />
     ${fontLink}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      .pdf-page {
+        width: ${cardWidthMm}mm;
+        height: ${cardHeightMm}mm;
+        overflow: hidden;
+      }
+
+      .pdf-flashcard {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--background-color, #fff);
+      }
+
+      .pdf-flashcard-header {
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .pdf-flashcard-header-left {
+        flex-shrink: 0;
+      }
+
+      .pdf-flashcard-header-right {
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+
+      ${cardContentCss}
+      ${cardLayoutCss}
+    </style>
   `;
 }
 
@@ -188,68 +159,25 @@ export async function exportCollectionToPdf(
     throw new Error('No flashcards selected for export.');
   }
 
-  loadGoogleFont(collection.font_family ?? 'Arial');
+  const pages = await Promise.all(
+    flashcards.flatMap((card) =>
+      (['front', 'back'] as const).map((side) => buildCardHtml(card, side, collection))
+    )
+  );
 
-  const pxPerMm = 96 / 25.4;
-  const cardWidthPx = Math.round(cardWidthMm * pxPerMm);
-  const cardHeightPx = Math.round(cardHeightMm * pxPerMm);
+  const headHtml = buildHeadHtml(collection, cardWidthMm, cardHeightMm);
+  const rendererUrl = import.meta.env.VITE_RENDERER_URL;
 
-  // Render into an isolated iframe so its styles don't pollute the app
-  const iframe = document.createElement('iframe');
-  iframe.setAttribute('aria-hidden', 'true');
-  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${cardWidthPx}px;height:${cardHeightPx}px;opacity:0;pointer-events:none;border:0;`;
-  document.body.appendChild(iframe);
+  const response = await fetch(`${rendererUrl}/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pages, headHtml, pageSize: [cardWidthMm, cardHeightMm] }),
+  });
 
-  try {
-    const renderDocument = iframe.contentDocument!;
-
-    renderDocument.open();
-    renderDocument.write(`<!doctype html><html><head>
-      ${buildHeadHtml(collection.font_family)}
-      <style>${buildRenderStyles(cardWidthMm, cardHeightMm)}</style>
-    </head><body></body></html>`);
-    renderDocument.close();
-
-    if (renderDocument.fonts?.ready) {
-      await renderDocument.fonts.ready;
-    }
-
-    const orientation = cardWidthMm > cardHeightMm ? 'landscape' : 'portrait';
-    const pdf = new jsPDF({ unit: 'mm', format: [cardWidthMm, cardHeightMm], orientation, compress: true });
-
-    let firstPage = true;
-    for (const card of flashcards) {
-      for (const side of ['front', 'back'] as const) {
-        const html = await buildCardPageHtml(card, side, collection);
-
-        // Reuse the single iframe body — render one page at a time
-        renderDocument.body.innerHTML = html;
-        renderDocument.body.className = 'pdf-page';
-
-        // Small delay to let the browser apply styles
-        await new Promise(r => setTimeout(r, 30));
-
-        const canvas = await html2canvas(renderDocument.body, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: collection.background_color ?? '#f0f0f0',
-          width: cardWidthPx,
-          height: cardHeightPx,
-          windowWidth: cardWidthPx,
-          windowHeight: cardHeightPx,
-        });
-
-        if (!firstPage) pdf.addPage();
-        firstPage = false;
-
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, cardWidthMm, cardHeightMm);
-      }
-    }
-
-    return pdf.output('blob');
-  } catch (error) {
-    throw error instanceof Error ? error : new Error('Failed to generate PDF');
-  } finally {
-    document.body.removeChild(iframe);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Failed to generate PDF' }));
+    throw new Error(err.error ?? 'Failed to generate PDF');
   }
+
+  return response.blob();
 }

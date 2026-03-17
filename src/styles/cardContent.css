@@ -1,6 +1,7 @@
 .flashcard-preview-content {
-  width: var(--card-width, auto);
-  height: var(--card-height, auto);
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
   padding: calc(1rem * var(--card-scale, 1));
   overflow: hidden;
   font-family: var(--font-family, Arial, sans-serif);

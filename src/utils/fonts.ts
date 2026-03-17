@@ -86,3 +86,40 @@ export function isSystemFont(fontName: string): boolean {
   const font = GOOGLE_FONTS.find((f) => f.name === fontName);
   return font ? font.isSystem : false;
 }
+
+export async function loadGoogleFontAsInlineCss(fontFamily: string): Promise<string> {
+  if (!fontFamily || isSystemFont(fontFamily)) return '';
+
+  const fontName = fontFamily.replace(/\s+/g, '+');
+  const cssUrl = `https://fonts.googleapis.com/css2?family=${fontName}:wght@400;600;700&display=swap`;
+
+  let cssText: string;
+  try {
+    const cssResponse = await fetch(cssUrl);
+    cssText = await cssResponse.text();
+  } catch {
+    return '';
+  }
+
+  const uniqueUrls = [...new Set([...cssText.matchAll(/url\((https:\/\/[^)]+)\)/g)].map((m) => m[1]))];
+
+  const replacements = await Promise.all(
+    uniqueUrls.map(async (url) => {
+      try {
+        const resp = await fetch(url);
+        const buffer = await resp.arrayBuffer();
+        const base64 = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+        const mimeType = url.includes('.woff2') ? 'font/woff2' : 'font/woff';
+        return { url, dataUrl: `data:${mimeType};base64,${base64}` };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  let result = cssText;
+  for (const r of replacements) {
+    if (r) result = result.replaceAll(r.url, r.dataUrl);
+  }
+  return result;
+}

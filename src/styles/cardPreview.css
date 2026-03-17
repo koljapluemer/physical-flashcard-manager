@@ -1,12 +1,16 @@
 @import './cardContent.css';
+@import './cardLayout.css';
 
 /* Card Preview Styles */
 .flashcard-preview-container {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
   border: 1px solid #ddd;
   background: var(--background-color, #f0f0f0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: var(--card-width);
+  height: var(--card-height);
+  overflow: hidden;
   font-family: var(--font-family, Arial, sans-serif);
   color: var(--font-color, #171717);
   line-height: 1.6;

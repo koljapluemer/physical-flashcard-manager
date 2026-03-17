@@ -115,79 +115,34 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
 
       <!-- 2-columns -->
       <template v-else-if="resolvedSideData.layout === '2-columns'">
-        <div class="preview-layout-2col">
-          <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
-          <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+        <div class="card-layout-2col">
+          <div class="card-col" v-html="renderedSections.left ?? ''"></div>
+          <div class="card-col card-col-right" v-html="renderedSections.right ?? ''"></div>
         </div>
       </template>
 
       <!-- top-row-2-columns -->
       <template v-else-if="resolvedSideData.layout === 'top-row-2-columns'">
-        <div class="preview-layout-top2col">
-          <div class="preview-top-row" v-html="renderedSections.top ?? ''"></div>
-          <div class="preview-2col-row">
-            <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
-            <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+        <div class="card-layout-top2col">
+          <div class="card-top-row" v-html="renderedSections.top ?? ''"></div>
+          <div class="card-2col-row">
+            <div class="card-col" v-html="renderedSections.left ?? ''"></div>
+            <div class="card-col card-col-right" v-html="renderedSections.right ?? ''"></div>
           </div>
         </div>
       </template>
 
       <!-- bottom-row-2-columns -->
       <template v-else-if="resolvedSideData.layout === 'bottom-row-2-columns'">
-        <div class="preview-layout-bottom2col">
-          <div class="preview-2col-row">
-            <div class="preview-col" v-html="renderedSections.left ?? ''"></div>
-            <div class="preview-col preview-col-right" v-html="renderedSections.right ?? ''"></div>
+        <div class="card-layout-bottom2col">
+          <div class="card-2col-row">
+            <div class="card-col" v-html="renderedSections.left ?? ''"></div>
+            <div class="card-col card-col-right" v-html="renderedSections.right ?? ''"></div>
           </div>
-          <div class="preview-bottom-row" v-html="renderedSections.bottom ?? ''"></div>
+          <div class="card-bottom-row" v-html="renderedSections.bottom ?? ''"></div>
         </div>
       </template>
     </div>
   </div>
 </template>
 
-<style scoped>
-.preview-layout-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100%;
-}
-
-.preview-layout-top2col {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.preview-layout-bottom2col {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.preview-2col-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  flex: 1;
-  min-height: 0;
-}
-
-.preview-top-row {
-  padding-bottom: 0.4rem;
-  margin-bottom: 0.4rem;
-}
-
-.preview-bottom-row {
-  padding-top: 0.4rem;
-  margin-top: 0.4rem;
-}
-
-.preview-col {
-  min-width: 0;
-  overflow: hidden;
-}
-
-.preview-col-right {
-  padding-left: 0.5rem;
-}
-</style>
