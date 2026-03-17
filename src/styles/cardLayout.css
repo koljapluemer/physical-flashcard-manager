@@ -2,7 +2,7 @@
 
 .card-layout-2col {
   display: grid;
-  grid-template-columns: minmax(min-content, 1fr) minmax(min-content, 1fr);
+  grid-template-columns: auto auto;
   height: 100%;
 }
 
@@ -15,7 +15,7 @@
 
 .card-2col-row {
   display: grid;
-  grid-template-columns: minmax(min-content, 1fr) minmax(min-content, 1fr);
+  grid-template-columns: auto auto;
   flex: 1;
   min-height: 0;
 }
@@ -37,4 +37,10 @@
 
 .card-col-right {
   padding-left: 0.5rem;
+}
+
+code {
+  background-color: rgba(0,0,0,.05);
+  padding: 2px;
+  border-radius: 2px;
 }

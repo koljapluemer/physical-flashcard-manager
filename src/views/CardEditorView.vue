@@ -187,7 +187,7 @@ Content here
           side="front"
           :collection="collection ?? undefined"
           :flashcard="{ header_right: headerRight } as any"
-          :scale="0.35"
+          :scale="1"
         />
       </div>
       <div>
@@ -196,7 +196,7 @@ Content here
           :sideData="backSide"
           side="back"
           :collection="collection ?? undefined"
-          :scale="0.35"
+          :scale="1"
         />
       </div>
     </div>
