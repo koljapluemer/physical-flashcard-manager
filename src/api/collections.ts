@@ -14,6 +14,7 @@ function mapCollection(row: CollectionRow): Collection {
     width_mm: row.width_mm,
     height_mm: row.height_mm,
     font_family: row.font_family,
+    font_size: (row as any).font_size ?? undefined,
     header_color: row.header_color,
     background_color: row.background_color,
     font_color: row.font_color,
@@ -61,24 +62,26 @@ export async function createCollection(data: {
   width_mm?: string;
   height_mm?: string;
   font_family?: string;
+  font_size?: string;
   header_color?: string;
   background_color?: string;
   font_color?: string;
   header_font_color?: string;
   header_text_left?: string;
 }): Promise<Collection> {
-  const payload: CollectionInsert = {
+  const payload = {
     title: data.title,
     description: data.description ?? null,
     width_mm: data.width_mm,
     height_mm: data.height_mm,
     font_family: data.font_family,
+    font_size: data.font_size ?? null,
     header_color: data.header_color,
     background_color: data.background_color,
     font_color: data.font_color,
     header_font_color: data.header_font_color,
     header_text_left: data.header_text_left ?? null,
-  };
+  } as CollectionInsert;
 
   const { data: inserted, error } = await supabase
     .from('collections')
@@ -101,6 +104,7 @@ export async function updateCollection(
     width_mm?: string;
     height_mm?: string;
     font_family?: string;
+    font_size?: string;
     header_color?: string;
     background_color?: string;
     font_color?: string;
@@ -108,18 +112,19 @@ export async function updateCollection(
     header_text_left?: string;
   }>
 ): Promise<Collection> {
-  const payload: CollectionUpdate = {
+  const payload = {
     title: data.title,
     description: data.description ?? null,
     width_mm: data.width_mm,
     height_mm: data.height_mm,
     font_family: data.font_family,
+    font_size: data.font_size ?? null,
     header_color: data.header_color,
     background_color: data.background_color,
     font_color: data.font_color,
     header_font_color: data.header_font_color,
     header_text_left: data.header_text_left ?? null,
-  };
+  } as CollectionUpdate;
 
   const { data: updated, error } = await supabase
     .from('collections')

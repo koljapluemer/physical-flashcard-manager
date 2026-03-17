@@ -60,6 +60,7 @@ const cardStyle = computed(() => {
     '--font-color': props.collection?.font_color ?? '#171717',
     '--header-font-color': props.collection?.header_font_color ?? '#ffffff',
     '--font-family': getFontCSSValue(props.collection?.font_family ?? 'Arial'),
+    '--base-font-size': `${parseFloat(props.collection?.font_size ?? '14')}px`,
     '--box-bg-color': hexToRgba(headerColor, 0.08),
     '--box-border-color': hexToRgba(headerColor, 0.16),
   };

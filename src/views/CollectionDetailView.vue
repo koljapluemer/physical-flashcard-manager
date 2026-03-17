@@ -40,6 +40,7 @@ const modalState = reactive({
     width_mm: '148.5',
     height_mm: '105',
     font_family: 'Arial',
+    font_size: '14',
     header_color: '#100e75',
     background_color: '#f0f0f0',
     font_color: '#171717',
@@ -161,6 +162,7 @@ function openEditModal() {
   modalState.initial.width_mm = collection.value.width_mm ?? '148.5';
   modalState.initial.height_mm = collection.value.height_mm ?? '105';
   modalState.initial.font_family = collection.value.font_family ?? 'Arial';
+  modalState.initial.font_size = collection.value.font_size ?? '14';
   modalState.initial.header_color = collection.value.header_color ?? '#100e75';
   modalState.initial.background_color = collection.value.background_color ?? '#f0f0f0';
   modalState.initial.font_color = collection.value.font_color ?? '#171717';
@@ -179,6 +181,7 @@ async function handleCollectionSubmit(payload: {
   width_mm: string;
   height_mm: string;
   font_family: string;
+  font_size: string;
   header_color: string;
   background_color: string;
   font_color: string;
@@ -196,6 +199,7 @@ async function handleCollectionSubmit(payload: {
       width_mm: payload.width_mm,
       height_mm: payload.height_mm,
       font_family: payload.font_family,
+      font_size: payload.font_size,
       header_color: payload.header_color,
       background_color: payload.background_color,
       font_color: payload.font_color,

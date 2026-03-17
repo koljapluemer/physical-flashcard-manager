@@ -13,6 +13,7 @@ const props = defineProps<{
     width_mm?: string;
     height_mm?: string;
     font_family?: string;
+    font_size?: string;
     header_color?: string;
     background_color?: string;
     font_color?: string;
@@ -30,6 +31,7 @@ const emit = defineEmits<{
     width_mm: string;
     height_mm: string;
     font_family: string;
+    font_size: string;
     header_color: string;
     background_color: string;
     font_color: string;
@@ -55,6 +57,7 @@ const form = reactive({
   width_mm: '148',
   height_mm: '105',
   font_family: 'Arial',
+  font_size: '14',
   header_color: '#100e75',
   background_color: '#f0f0f0',
   font_color: '#171717',
@@ -75,6 +78,7 @@ watch(
       form.width_mm = props.initialValues.width_mm ?? '148.5';
       form.height_mm = props.initialValues.height_mm ?? '105';
       form.font_family = props.initialValues.font_family ?? 'Arial';
+      form.font_size = props.initialValues.font_size ?? '14';
       form.header_color = props.initialValues.header_color ?? '#100e75';
       form.background_color = props.initialValues.background_color ?? '#f0f0f0';
       form.font_color = props.initialValues.font_color ?? '#171717';
@@ -133,6 +137,7 @@ function handleSubmit() {
     width_mm: form.width_mm,
     height_mm: form.height_mm,
     font_family: form.font_family,
+    font_size: form.font_size,
     header_color: form.header_color,
     background_color: form.background_color,
     font_color: form.font_color,
@@ -158,6 +163,7 @@ const previewCollection = computed<Collection>(() => ({
   width_mm: form.width_mm,
   height_mm: form.height_mm,
   font_family: form.font_family,
+  font_size: form.font_size,
   header_color: form.header_color,
   background_color: form.background_color,
   font_color: form.font_color,
@@ -278,6 +284,18 @@ const previewCollection = computed<Collection>(() => ({
               {{ font.displayName }}
             </option>
           </select>
+        </fieldset>
+
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Base Font Size (px)</legend>
+          <input
+            v-model="form.font_size"
+            type="number"
+            min="8"
+            max="32"
+            step="1"
+            class="input input-bordered w-28"
+          />
         </fieldset>
 
         <fieldset class="fieldset">

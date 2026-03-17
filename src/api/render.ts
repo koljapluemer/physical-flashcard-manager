@@ -109,6 +109,8 @@ function buildHeadHtml(collection: Collection, cardWidthMm: number, cardHeightMm
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
 
+      :root { --base-font-size: ${parseFloat(collection.font_size ?? '14')}px; }
+
       .pdf-page {
         width: ${cardWidthMm}mm;
         height: ${cardHeightMm}mm;

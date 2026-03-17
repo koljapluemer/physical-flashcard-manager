@@ -12,6 +12,7 @@ export interface Collection {
   width_mm?: string;
   height_mm?: string;
   font_family?: string;
+  font_size?: string;
   header_color?: string;
   background_color?: string;
   font_color?: string;

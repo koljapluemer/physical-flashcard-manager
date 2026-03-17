@@ -5,7 +5,7 @@
   padding: calc(1rem * var(--card-scale, 1));
   overflow: hidden;
   font-family: var(--font-family, Arial, sans-serif);
-  font-size: calc(14px * var(--card-scale, 1));
+  font-size: calc(var(--base-font-size, 14px) * var(--card-scale, 1));
   line-height: 1.6;
   color: var(--font-color, #171717);
   text-align: left;
