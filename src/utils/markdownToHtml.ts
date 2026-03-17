@@ -1,37 +1,20 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
+import remarkDirective from 'remark-directive';
 import remarkRehype from 'remark-rehype';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 import { visit } from 'unist-util-visit';
-import type { Root, Code, Html, Parent } from 'mdast';
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
+import type { Root } from 'mdast';
 
 function remarkBoxPlugin() {
   return (tree: Root) => {
-    visit(tree, 'code', (node: Code, index: number | undefined, parent: Parent | undefined) => {
-      if (node.lang === 'box' && parent && typeof index === 'number') {
-        // Convert content to paragraphs, escaping HTML
-        const content = node.value
-          .split('\n\n')
-          .map((para) => `<p>${escapeHtml(para).replace(/\n/g, '<br>')}</p>`)
-          .join('');
-
-        const htmlNode: Html = {
-          type: 'html',
-          value: `<aside class="flashcard-box">${content}</aside>`,
-        };
-
-        parent.children[index] = htmlNode;
+    visit(tree, 'containerDirective', (node: any) => {
+      if (node.name === 'box') {
+        node.data = node.data || {};
+        node.data.hName = 'aside';
+        node.data.hProperties = { class: 'flashcard-box' };
       }
     });
   };
@@ -40,6 +23,7 @@ function remarkBoxPlugin() {
 const processor = unified()
   .use(remarkParse)
   .use(remarkMath)
+  .use(remarkDirective)
   .use(remarkBoxPlugin)
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeKatex)

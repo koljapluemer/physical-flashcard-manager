@@ -136,7 +136,7 @@ function buildMessages(prompt: string) {
     'Markdown format rules:',
     '- Use **bold**, *italic*, # headings, - bullets, 1. numbered lists',
     '- Math: use $E = mc^2$ for inline math (single dollar signs)',
-    '- Colored boxes: use ```box\\nContent here\\n``` fenced code blocks',
+    '- Colored boxes: use :::box\\nContent here\\n::: container directives',
     '- Keep answers concise and readable on a small physical card.',
     '- Do NOT use HTML tags - use pure Markdown only.',
     '- Do NOT use \\( \\), \\[ \\], or other LaTeX delimiters - only $...$',

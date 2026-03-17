@@ -172,9 +172,9 @@ function applyAiSuggestion(payload: { front: CardSideData; back: CardSideData; h
 ![alt](url)       Image
 $E = mc^2$        Inline math (LaTeX)
 
-```box
+::: box
 Content here
-```               Colored box</pre>
+:::               Colored box</pre>
       </div>
     </details>
 
