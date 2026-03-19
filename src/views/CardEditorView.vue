@@ -6,6 +6,7 @@ import { getFontCSSValue, loadGoogleFont } from '../utils/fonts';
 import { parseCardSide, serializeCardSide, emptyCardSide, LAYOUT_LABELS, LAYOUT_SECTIONS } from '../utils/cardSide';
 import CardPreview from '../components/CardPreview.vue';
 import CardChatPane from '../components/CardChatPane.vue';
+import SectionEditor from '../components/SectionEditor.vue';
 import * as collectionsApi from '../api/collections';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard, CardSideData, CardLayout } from '../types';
@@ -170,6 +171,9 @@ function applyAiSuggestion(payload: { front: CardSideData; back: CardSideData; h
 - item            Bullet list
 1. item           Numbered list
 ![alt](url)       Image
+![alt|300](url)   Image, 300px wide
+![alt|x150](url)  Image, 150px tall
+![alt|300x150](url) Image, 300×150px
 $E = mc^2$        Inline math (LaTeX)
 
 ::: box
@@ -233,11 +237,7 @@ Content here
           <template v-if="frontSide.layout === 'default'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Content</legend>
-              <textarea
-                v-model="frontSide.sections.main"
-                class="textarea textarea-bordered w-full h-72 font-mono"
-                placeholder="Enter markdown..."
-              />
+              <SectionEditor v-model="frontSide.sections.main" :collection-id="props.id" height-class="h-72" placeholder="Enter markdown..." />
             </fieldset>
           </template>
 
@@ -245,11 +245,11 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+                <SectionEditor v-model="frontSide.sections.left" :collection-id="props.id" height-class="h-64" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+                <SectionEditor v-model="frontSide.sections.right" :collection-id="props.id" height-class="h-64" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -258,15 +258,15 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+                <SectionEditor v-model="frontSide.sections.left" :collection-id="props.id" height-class="h-64" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Center column</legend>
-                <textarea v-model="frontSide.sections.center" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Center column..." />
+                <SectionEditor v-model="frontSide.sections.center" :collection-id="props.id" height-class="h-64" placeholder="Center column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+                <SectionEditor v-model="frontSide.sections.right" :collection-id="props.id" height-class="h-64" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -274,16 +274,16 @@ Content here
           <template v-else-if="frontSide.layout === 'top-row-2-columns'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Top row</legend>
-              <textarea v-model="frontSide.sections.top" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Top row..." />
+              <SectionEditor v-model="frontSide.sections.top" :collection-id="props.id" height-class="h-36" placeholder="Top row..." />
             </fieldset>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom left</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom left..." />
+                <SectionEditor v-model="frontSide.sections.left" :collection-id="props.id" height-class="h-48" placeholder="Bottom left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom right</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom right..." />
+                <SectionEditor v-model="frontSide.sections.right" :collection-id="props.id" height-class="h-48" placeholder="Bottom right..." />
               </fieldset>
             </div>
           </template>
@@ -292,16 +292,16 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top left</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top left..." />
+                <SectionEditor v-model="frontSide.sections.left" :collection-id="props.id" height-class="h-48" placeholder="Top left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top right</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top right..." />
+                <SectionEditor v-model="frontSide.sections.right" :collection-id="props.id" height-class="h-48" placeholder="Top right..." />
               </fieldset>
             </div>
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Bottom row</legend>
-              <textarea v-model="frontSide.sections.bottom" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Bottom row..." />
+              <SectionEditor v-model="frontSide.sections.bottom" :collection-id="props.id" height-class="h-36" placeholder="Bottom row..." />
             </fieldset>
           </template>
         </div>
@@ -318,11 +318,7 @@ Content here
           <template v-if="backSide.layout === 'default'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Content</legend>
-              <textarea
-                v-model="backSide.sections.main"
-                class="textarea textarea-bordered w-full h-72 font-mono"
-                placeholder="Enter markdown..."
-              />
+              <SectionEditor v-model="backSide.sections.main" :collection-id="props.id" height-class="h-72" placeholder="Enter markdown..." />
             </fieldset>
           </template>
 
@@ -330,11 +326,11 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+                <SectionEditor v-model="backSide.sections.left" :collection-id="props.id" height-class="h-64" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+                <SectionEditor v-model="backSide.sections.right" :collection-id="props.id" height-class="h-64" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -343,15 +339,15 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+                <SectionEditor v-model="backSide.sections.left" :collection-id="props.id" height-class="h-64" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Center column</legend>
-                <textarea v-model="backSide.sections.center" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Center column..." />
+                <SectionEditor v-model="backSide.sections.center" :collection-id="props.id" height-class="h-64" placeholder="Center column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+                <SectionEditor v-model="backSide.sections.right" :collection-id="props.id" height-class="h-64" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -359,16 +355,16 @@ Content here
           <template v-else-if="backSide.layout === 'top-row-2-columns'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Top row</legend>
-              <textarea v-model="backSide.sections.top" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Top row..." />
+              <SectionEditor v-model="backSide.sections.top" :collection-id="props.id" height-class="h-36" placeholder="Top row..." />
             </fieldset>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom left</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom left..." />
+                <SectionEditor v-model="backSide.sections.left" :collection-id="props.id" height-class="h-48" placeholder="Bottom left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom right</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom right..." />
+                <SectionEditor v-model="backSide.sections.right" :collection-id="props.id" height-class="h-48" placeholder="Bottom right..." />
               </fieldset>
             </div>
           </template>
@@ -377,16 +373,16 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top left</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top left..." />
+                <SectionEditor v-model="backSide.sections.left" :collection-id="props.id" height-class="h-48" placeholder="Top left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top right</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top right..." />
+                <SectionEditor v-model="backSide.sections.right" :collection-id="props.id" height-class="h-48" placeholder="Top right..." />
               </fieldset>
             </div>
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Bottom row</legend>
-              <textarea v-model="backSide.sections.bottom" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Bottom row..." />
+              <SectionEditor v-model="backSide.sections.bottom" :collection-id="props.id" height-class="h-36" placeholder="Bottom row..." />
             </fieldset>
           </template>
         </div>
