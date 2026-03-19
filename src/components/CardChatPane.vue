@@ -192,7 +192,7 @@ async function sendMessage() {
     };
 
     const body = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: buildMessages(prompt),
       temperature: 0.6,
       response_format: {

@@ -82,10 +82,20 @@ export async function createFlashcard(data: {
 
   const insertedRow = inserted as FlashcardRow;
 
-  // Set sort_order = id so new cards appear at the end naturally
+  // Set sort_order = max(sort_order) + 1 for this collection so new cards appear at the end
+  const { data: maxData } = await supabase
+    .from('flashcards')
+    .select('sort_order')
+    .eq('collection_id', data.collection)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextSortOrder = maxData ? (maxData.sort_order ?? 0) + 1 : 1;
+
   const { data: updated, error: updateError } = await supabase
     .from('flashcards')
-    .update({ sort_order: insertedRow.id })
+    .update({ sort_order: nextSortOrder })
     .eq('id', insertedRow.id)
     .select('*')
     .single();
