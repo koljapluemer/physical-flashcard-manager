@@ -17,8 +17,6 @@ const emit = defineEmits<{
 const formState = reactive({
   file: null as File | null,
   internalName: '',
-  pageRangeStart: 1,
-  pageRangeEnd: 1,
   submitting: false,
 });
 
@@ -37,8 +35,6 @@ watch(
 function resetForm() {
   formState.file = null;
   formState.internalName = '';
-  formState.pageRangeStart = 1;
-  formState.pageRangeEnd = 1;
   error.value = null;
   if (fileInputRef.value) {
     fileInputRef.value.value = '';
@@ -64,8 +60,6 @@ async function submitForm() {
       collectionId: props.collection.id,
       file: formState.file,
       internalName: formState.internalName,
-      pageRangeStart: formState.pageRangeStart,
-      pageRangeEnd: formState.pageRangeEnd,
     });
     emit('created');
     emit('close');
@@ -88,13 +82,13 @@ function close() {
       <div class="flex items-start justify-between">
         <div>
           <h3 class="text-xl font-semibold">Add material</h3>
-          <p class="text-base-content/70">Upload a PDF and choose the page range to keep.</p>
+          <p class="text-base-content/70">Upload a PDF for use as AI reference material.</p>
         </div>
-        <button class="btn  btn-sm" type="button" @click="close">Close</button>
+        <button class="btn btn-sm" type="button" @click="close">Close</button>
       </div>
 
-      <form class="grid gap-4 md:grid-cols-2" @submit.prevent="submitForm">
-        <fieldset class="fieldset md:col-span-2">
+      <form class="grid gap-4" @submit.prevent="submitForm">
+        <fieldset class="fieldset">
           <label class="label" for="material-file">PDF</label>
           <input
             id="material-file"
@@ -108,7 +102,7 @@ function close() {
           />
         </fieldset>
 
-        <fieldset class="fieldset md:col-span-2">
+        <fieldset class="fieldset">
           <label class="label" for="material-name">Internal name (optional)</label>
           <input
             id="material-name"
@@ -120,34 +114,8 @@ function close() {
           />
         </fieldset>
 
-        <fieldset class="fieldset">
-          <label class="label" for="page-start">Page start</label>
-          <input
-            id="page-start"
-            type="number"
-            name="page-start"
-            class="input"
-            min="1"
-            v-model.number="formState.pageRangeStart"
-            required
-          />
-        </fieldset>
-
-        <fieldset class="fieldset">
-          <label class="label" for="page-end">Page end</label>
-          <input
-            id="page-end"
-            type="number"
-            name="page-end"
-            class="input"
-            min="1"
-            v-model.number="formState.pageRangeEnd"
-            required
-          />
-        </fieldset>
-
-        <div class="md:col-span-2 flex justify-end gap-2">
-          <button class="btn " type="button" @click="close" :disabled="formState.submitting">
+        <div class="flex justify-end gap-2">
+          <button class="btn" type="button" @click="close" :disabled="formState.submitting">
             Cancel
           </button>
           <button class="btn btn-primary" type="submit" :disabled="formState.submitting || !formState.file">

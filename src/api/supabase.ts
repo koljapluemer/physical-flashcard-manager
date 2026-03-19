@@ -111,9 +111,6 @@ export type Database = {
           collection_id: number;
           internal_name: string;
           original_filename: string;
-          page_range_start: number;
-          page_range_end: number;
-          page_count: number;
           storage_path: string;
           created_at: string;
           updated_at: string;
@@ -124,9 +121,6 @@ export type Database = {
           collection_id: number;
           internal_name: string;
           original_filename: string;
-          page_range_start: number;
-          page_range_end: number;
-          page_count: number;
           storage_path: string;
           created_at?: string;
           updated_at?: string;
@@ -137,9 +131,6 @@ export type Database = {
           collection_id?: number;
           internal_name?: string;
           original_filename?: string;
-          page_range_start?: number;
-          page_range_end?: number;
-          page_count?: number;
           storage_path?: string;
           created_at?: string;
           updated_at?: string;

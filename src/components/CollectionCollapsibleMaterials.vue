@@ -105,7 +105,6 @@ function closeAdd() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Pages</th>
                 <th>Added</th>
                 <th class="text-right">Actions</th>
               </tr>
@@ -115,10 +114,6 @@ function closeAdd() {
                 <td>
                   <div class="font-medium">{{ material.internalName }}</div>
                   <div class="text-base-content/70">{{ material.originalFilename }}</div>
-                </td>
-                <td>
-                  {{ material.pageRangeStart }}-{{ material.pageRangeEnd }}
-                  <span class="text-base-content/70">({{ material.pageCount }} pages)</span>
                 </td>
                 <td>{{ formatDate(material.createdAt) }}</td>
                 <td>

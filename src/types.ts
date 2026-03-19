@@ -40,9 +40,6 @@ export interface Material {
   collectionId: number;
   internalName: string;
   originalFilename: string;
-  pageRangeStart: number;
-  pageRangeEnd: number;
-  pageCount: number;
   storagePath?: string;
   createdAt: string;
   updatedAt: string;

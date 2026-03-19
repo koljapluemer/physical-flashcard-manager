@@ -14,9 +14,6 @@ function mapMaterial(row: MaterialRow): Material {
     collectionId: row.collection_id,
     internalName: row.internal_name,
     originalFilename: row.original_filename,
-    pageRangeStart: row.page_range_start,
-    pageRangeEnd: row.page_range_end,
-    pageCount: row.page_count,
     storagePath: row.storage_path,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -31,18 +28,6 @@ function ensurePdf(file: File) {
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     throw new Error('File is too large. Please pick a PDF under 15 MB.');
-  }
-}
-
-function validateRange(start: number, end: number) {
-  if (!Number.isFinite(start) || !Number.isFinite(end)) {
-    throw new Error('Page range must be numbers.');
-  }
-  if (start < 1) {
-    throw new Error('Page start must be at least 1.');
-  }
-  if (end < start) {
-    throw new Error('Page end must be greater than or equal to start.');
   }
 }
 
@@ -91,15 +76,11 @@ export async function createMaterial(params: {
   collectionId: number;
   file: File;
   internalName?: string;
-  pageRangeStart: number;
-  pageRangeEnd: number;
 }): Promise<Material> {
   ensurePdf(params.file);
-  validateRange(params.pageRangeStart, params.pageRangeEnd);
 
   const userId = await getCurrentUserId();
   const now = new Date().toISOString();
-  const pageCount = params.pageRangeEnd - params.pageRangeStart + 1;
   const sanitizedFilename = sanitizeFilename(params.file.name) || `${crypto.randomUUID()}.pdf`;
   const storagePath = `${userId}/${params.collectionId}/${crypto.randomUUID()}-${sanitizedFilename}`;
 
@@ -118,9 +99,6 @@ export async function createMaterial(params: {
     collection_id: params.collectionId,
     internal_name: buildInternalName(params.file, params.internalName),
     original_filename: params.file.name,
-    page_range_start: params.pageRangeStart,
-    page_range_end: params.pageRangeEnd,
-    page_count: pageCount,
     storage_path: storagePath,
     created_at: now,
     updated_at: now,

@@ -7,16 +7,74 @@ import CardPreview from './CardPreview.vue';
 import * as materialsApi from '../api/materials';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard, Material } from '../types';
+import type { CardLayout, CardSideData } from '../types';
+import { emptyCardSide, parseCardSide, serializeCardSide, LAYOUT_SECTIONS, LAYOUT_LABELS } from '../utils/cardSide';
 import { useSettingsStore } from '../stores/settings';
 import { useToastStore } from '../stores/toast';
 
 const DEFAULT_PROMPT =
   'Generate concise Q&A flashcards that fit on small physical cards. Keep answers short and scannable. Prefer one concept per card. Use the attached material as a guideline, but do not copy verbatim from it. If math is included, render it as inline latex syntax. Set the header text to either "Level 1", "Level 2", or "Level 3", depending on the difficulty of the card.';
 
+// Structured output schema — all section keys required (unused ones stay "").
+// sanitizeSide() filters to only the keys relevant to the chosen layout.
+const RESPONSE_FORMAT = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'flashcards_response',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        flashcards: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              front: { $ref: '#/$defs/card_side' },
+              back: { $ref: '#/$defs/card_side' },
+              header_right: { type: 'string' },
+            },
+            required: ['front', 'back', 'header_right'],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ['flashcards'],
+      additionalProperties: false,
+      $defs: {
+        card_side: {
+          type: 'object',
+          properties: {
+            layout: {
+              type: 'string',
+              enum: ['default', '2-columns', '3-columns', 'top-row-2-columns', 'bottom-row-2-columns'],
+            },
+            sections: {
+              type: 'object',
+              properties: {
+                main:   { type: 'string' },
+                left:   { type: 'string' },
+                right:  { type: 'string' },
+                center: { type: 'string' },
+                top:    { type: 'string' },
+                bottom: { type: 'string' },
+              },
+              required: ['main', 'left', 'right', 'center', 'top', 'bottom'],
+              additionalProperties: false,
+            },
+          },
+          required: ['layout', 'sections'],
+          additionalProperties: false,
+        },
+      },
+    },
+  },
+};
+
 type Draft = {
   id: string;
-  front: string;
-  back: string;
+  front: CardSideData;
+  back: CardSideData;
   header_right?: string;
   selected: boolean;
 };
@@ -46,20 +104,24 @@ const router = useRouter();
 const aiModalOpen = ref(false);
 const model = ref('gpt-4o-mini');
 const prompt = ref(DEFAULT_PROMPT);
-const includeMaterials = ref(true);
-const includeFlashcards = ref(false);
 const generating = ref(false);
 const saving = ref(false);
 const aiError = ref<string | null>(null);
 
 const materials = ref<Material[]>([]);
+const selectedMaterialIds = ref<Set<string>>(new Set());
 const materialsLoading = ref(false);
 const materialsError = ref<string | null>(null);
 
 const drafts = ref<Draft[]>([]);
 
 const hasSelection = computed(() =>
-  drafts.value.some((draft) => draft.selected && draft.front.trim() && draft.back.trim())
+  drafts.value.some(
+    (draft) =>
+      draft.selected &&
+      Object.values(draft.front.sections).some((s) => s.trim()) &&
+      Object.values(draft.back.sections).some((s) => s.trim())
+  )
 );
 const allChecked = computed(() =>
   drafts.value.length > 0 && drafts.value.every((draft) => draft.selected)
@@ -115,6 +177,8 @@ async function loadMaterials() {
   materialsError.value = null;
   try {
     materials.value = await materialsApi.getMaterials(props.collection.id);
+    // Select all by default
+    selectedMaterialIds.value = new Set(materials.value.map((m) => m.id));
   } catch (err) {
     materialsError.value = err instanceof Error ? err.message : 'Unable to load materials';
   } finally {
@@ -122,27 +186,35 @@ async function loadMaterials() {
   }
 }
 
+function toggleMaterial(id: string) {
+  const next = new Set(selectedMaterialIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedMaterialIds.value = next;
+}
+
 function resetModal() {
   model.value = 'gpt-4o-mini';
   prompt.value = DEFAULT_PROMPT;
-  includeMaterials.value = true;
-  includeFlashcards.value = false;
   generating.value = false;
   saving.value = false;
   aiError.value = null;
   drafts.value = [];
+  selectedMaterialIds.value = new Set();
 }
 
-function stripHtml(html: string, maxLength = 140): string {
-  const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!text) {
-    return '—';
+function cardSideToText(raw: string): string {
+  try {
+    const side = parseCardSide(raw);
+    return Object.values(side.sections).filter(Boolean).join(' | ');
+  } catch {
+    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
-  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
 }
 
 function buildContextBlock() {
   const parts: string[] = [];
+
   if (props.collection) {
     parts.push(
       [
@@ -155,25 +227,21 @@ function buildContextBlock() {
     );
   }
 
-  if (includeMaterials.value && materials.value.length) {
-    const materialsList = materials.value
-      .map(
-        (material) =>
-          `- ${material.internalName || material.originalFilename} (pages ${material.pageRangeStart}-${material.pageRangeEnd}, ${material.pageCount} pages)`
-      )
+  const chosen = materials.value.filter((m) => selectedMaterialIds.value.has(m.id));
+  if (chosen.length) {
+    const list = chosen
+      .map((m) => `- ${m.internalName || m.originalFilename}`)
       .join('\n');
-    parts.push(`Materials:\n${materialsList}`);
+    parts.push(`Reference materials:\n${list}`);
   }
 
-  if (includeFlashcards.value && props.flashcards.length) {
-    const cardsList = props.flashcards
-      .slice(0, 12)
-      .map(
-        (card) =>
-          `- Card ${card.id}: front "${stripHtml(card.front, 80)}", back "${stripHtml(card.back, 80)}"`
-      )
+  const favorites = props.flashcards.filter((c) => c.is_favorite);
+  if (favorites.length) {
+    const list = favorites
+      .slice(0, 10)
+      .map((c) => `- Front: "${cardSideToText(c.front)}" / Back: "${cardSideToText(c.back)}"`)
       .join('\n');
-    parts.push(`Existing flashcards (snippets):\n${cardsList}`);
+    parts.push(`Example cards from this collection (match their style):\n${list}`);
   }
 
   return parts.join('\n\n');
@@ -185,18 +253,21 @@ function buildMessages() {
 
   const systemContent = [
     'You draft flashcards for a physical flashcard app.',
-    'Return ONLY valid JSON. No code fences, no Markdown.',
-    'Schema: {"flashcards":[{"front":"<html>","back":"<html>","header_right":"<optional string>"}]}',
-    'Constraints for front/back HTML:',
-    '- Use simple semantic tags only: <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>, <h2>, <h3>, <code>, <pre>, <br>, <blockquote>.',
-    '- No inline styles, scripts, images, video, audio, iframes, links, or external assets.',
-    '- Do not wrap in <html> or <body>.',
-    '- Keep text concise. Prefer short paragraphs or lists.',
-    'Math notation:',
-    '- For inline math, wrap LaTeX in single dollar signs: $E = mc^2$',
-    '- The editor automatically renders $...$ patterns as math.',
-    '- Example: "<p>The formula is $\\\\frac{a}{b}$ where $a$ is the numerator.</p>"',
-    '- Do NOT use \\\\( \\\\), \\\\[ \\\\], or other LaTeX delimiters.',
+    'Layout types and their relevant section keys:',
+    '  "default": fill "main"',
+    '  "2-columns": fill "left" and "right"',
+    '  "3-columns": fill "left", "center", and "right"',
+    '  "top-row-2-columns": fill "top", "left", and "right"',
+    '  "bottom-row-2-columns": fill "left", "right", and "bottom"',
+    'Leave all unused section keys as empty strings "".',
+    'Markdown format rules:',
+    '- Use **bold**, *italic*, # headings, - bullets, 1. numbered lists.',
+    '- Math: use $E = mc^2$ for inline math (single dollar signs only).',
+    '- Do NOT use HTML tags — use pure Markdown only.',
+    '- Do NOT use \\( \\), \\[ \\], or other LaTeX delimiters — only $...$.',
+    '- Colored boxes: use :::box\\nContent\\n::: container directives.',
+    '- For most cards, prefer layout "default" on both sides unless columns genuinely help.',
+    '- Keep content concise and readable on a small physical card.',
   ].join('\n');
 
   const userContent = [
@@ -215,12 +286,13 @@ function buildMessages() {
   ];
 }
 
-function extractJson(text: string) {
-  const fenced = text.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);
-  if (fenced?.[1]) {
-    return fenced[1];
+function sanitizeSide(side: CardSideData): CardSideData {
+  const validKeys = LAYOUT_SECTIONS[side.layout] ?? LAYOUT_SECTIONS['default'];
+  const sections: Record<string, string> = {};
+  for (const key of validKeys) {
+    sections[key] = typeof side.sections[key] === 'string' ? side.sections[key] : '';
   }
-  return text.trim();
+  return { layout: side.layout, sections };
 }
 
 async function generateDrafts() {
@@ -241,45 +313,39 @@ async function generateDrafts() {
   aiError.value = null;
 
   try {
-    const client = new OpenAI({
-      apiKey: openaiKey,
-      dangerouslyAllowBrowser: true,
-    });
+    const client = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
-    const messages = buildMessages();
     const response = await client.chat.completions.create({
       model: model.value.trim() || 'gpt-4o-mini',
-      messages,
+      messages: buildMessages(),
       temperature: 0.4,
-      max_tokens: 800,
+      response_format: RESPONSE_FORMAT,
     });
 
     const content = response.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from AI.');
-    }
+    if (!content) throw new Error('No response from AI.');
 
-    const parsed = JSON.parse(extractJson(content));
-    const flashcards: Array<{ front?: string; back?: string; header_right?: string }> =
-      parsed?.flashcards;
+    const parsed = JSON.parse(content) as {
+      flashcards: Array<{ front: CardSideData; back: CardSideData; header_right: string }>;
+    };
 
-    if (!Array.isArray(flashcards)) {
-      throw new Error('Response did not include flashcards.');
-    }
+    if (!Array.isArray(parsed.flashcards)) throw new Error('Response did not include flashcards.');
 
-    const cleanDrafts = flashcards
+    const cleanDrafts = parsed.flashcards
       .map((card, index) => ({
         id: `${Date.now()}-${index}`,
-        front: (card.front ?? '').trim(),
-        back: (card.back ?? '').trim(),
-        header_right: (card.header_right ?? '').trim(),
+        front: sanitizeSide(card.front),
+        back: sanitizeSide(card.back),
+        header_right: card.header_right.trim(),
         selected: true,
       }))
-      .filter((card) => card.front && card.back);
+      .filter(
+        (card) =>
+          Object.values(card.front.sections).some((s) => s.trim()) &&
+          Object.values(card.back.sections).some((s) => s.trim())
+      );
 
-    if (!cleanDrafts.length) {
-      throw new Error('No usable flashcards returned.');
-    }
+    if (!cleanDrafts.length) throw new Error('No usable flashcards returned.');
 
     drafts.value = cleanDrafts;
   } catch (err) {
@@ -291,11 +357,16 @@ async function generateDrafts() {
   }
 }
 
+function setDraftLayout(draft: Draft, side: 'front' | 'back', layout: CardLayout) {
+  const newSections: Record<string, string> = {};
+  for (const key of LAYOUT_SECTIONS[layout]) {
+    newSections[key] = draft[side].sections[key] ?? '';
+  }
+  draft[side] = { layout, sections: newSections };
+}
+
 function toggleAll(selected: boolean) {
-  drafts.value = drafts.value.map((draft) => ({
-    ...draft,
-    selected,
-  }));
+  drafts.value = drafts.value.map((draft) => ({ ...draft, selected }));
 }
 
 async function saveSelected() {
@@ -304,7 +375,10 @@ async function saveSelected() {
     return;
   }
   const selectedDrafts = drafts.value.filter(
-    (draft) => draft.selected && draft.front.trim() && draft.back.trim()
+    (draft) =>
+      draft.selected &&
+      Object.values(draft.front.sections).some((s) => s.trim()) &&
+      Object.values(draft.back.sections).some((s) => s.trim())
   );
   if (!selectedDrafts.length) {
     aiError.value = 'Pick at least one flashcard to add.';
@@ -318,8 +392,8 @@ async function saveSelected() {
     for (const draft of selectedDrafts) {
       await flashcardsApi.createFlashcard({
         collection: props.collection.id,
-        front: draft.front.trim(),
-        back: draft.back.trim(),
+        front: serializeCardSide(draft.front),
+        back: serializeCardSide(draft.back),
         header_right: draft.header_right?.trim() || undefined,
       });
     }
@@ -364,7 +438,7 @@ async function saveSelected() {
             Uses the OpenAI API key saved in Settings. Adjust the prompt and pick which generated cards to keep.
           </p>
         </div>
-        <button class="btn  btn-sm" type="button" @click="closeAiModal" :disabled="generating || saving">
+        <button class="btn btn-sm" type="button" @click="closeAiModal" :disabled="generating || saving">
           Close
         </button>
       </div>
@@ -396,18 +470,8 @@ async function saveSelected() {
         ></textarea>
       </fieldset>
 
-      <div class="flex flex-wrap gap-4">
-        <label class="flex items-center gap-2">
-          <input v-model="includeMaterials" type="checkbox" class="checkbox checkbox-sm" />
-          <span>Include materials</span>
-        </label>
-        <label class="flex items-center gap-2">
-          <input v-model="includeFlashcards" type="checkbox" class="checkbox checkbox-sm" />
-          <span>Include existing flashcards</span>
-        </label>
-      </div>
-
-      <div v-if="includeMaterials" class="space-y-2">
+      <!-- Per-material selection -->
+      <div class="space-y-2">
         <div class="flex items-center gap-2">
           <p class="font-medium">Materials</p>
           <span v-if="materialsLoading" class="loading loading-spinner loading-xs"></span>
@@ -415,28 +479,28 @@ async function saveSelected() {
         <div v-if="materialsError" class="alert alert-error">
           <span>{{ materialsError }}</span>
         </div>
-        <div v-else-if="materials.length === 0" class="text-base-content/70">No materials added.</div>
-        <div v-else class="max-h-32 overflow-y-auto space-y-2">
-          <div v-for="material in materials" :key="material.id" class="text-sm">
-            <span class="font-medium">{{ material.internalName || material.originalFilename }}</span>
-            <span class="text-base-content/70"> · pages {{ material.pageRangeStart }}-{{ material.pageRangeEnd }}</span>
-          </div>
+        <div v-else-if="materials.length === 0" class="text-base-content/70 text-sm">
+          No materials added to this collection.
         </div>
-      </div>
-
-      <div v-if="includeFlashcards" class="space-y-2">
-        <p class="font-medium">Existing flashcards</p>
-        <div v-if="flashcards.length === 0" class="text-base-content/70">No flashcards yet.</div>
-        <div v-else class="max-h-32 overflow-y-auto space-y-2">
-          <div v-for="card in flashcards" :key="card.id" class="text-sm">
-            <span class="font-medium">#{{ card.id }}</span>
-            <span class="text-base-content/70"> · {{ stripHtml(card.front, 90) }}</span>
-          </div>
+        <div v-else class="space-y-1">
+          <label
+            v-for="material in materials"
+            :key="material.id"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              :checked="selectedMaterialIds.has(material.id)"
+              @change="toggleMaterial(material.id)"
+            />
+            <span class="text-sm">{{ material.internalName || material.originalFilename }}</span>
+          </label>
         </div>
       </div>
 
       <div class="flex justify-end gap-2">
-        <button class="btn " type="button" :disabled="generating || saving" @click="closeAiModal">
+        <button class="btn" type="button" :disabled="generating || saving" @click="closeAiModal">
           Cancel
         </button>
         <button
@@ -481,50 +545,66 @@ async function saveSelected() {
           </div>
         </div>
 
-        <div class="space-y-3 max-h-[26rem] overflow-y-auto pr-1">
+        <div class="space-y-3 max-h-[36rem] overflow-y-auto pr-1">
           <div
             v-for="draft in drafts"
             :key="draft.id"
             class="rounded-lg border border-base-200 p-3 space-y-3"
           >
-            <div class="flex items-start gap-3">
-              <input v-model="draft.selected" type="checkbox" class="checkbox checkbox-sm mt-1" />
-              <div class="flex-1 space-y-3">
-                <div class="grid gap-3 md:grid-cols-2">
-                  <fieldset class="fieldset">
-                    <label class="label text-sm">Front (HTML)</label>
-                    <textarea v-model="draft.front" class="textarea" rows="4"></textarea>
-                  </fieldset>
-                  <fieldset class="fieldset">
-                    <label class="label text-sm">Back (HTML)</label>
-                    <textarea v-model="draft.back" class="textarea" rows="4"></textarea>
-                  </fieldset>
-                </div>
+            <!-- Checkbox + header_right -->
+            <div class="flex items-center gap-3">
+              <input v-model="draft.selected" type="checkbox" class="checkbox checkbox-sm flex-none" />
+              <fieldset class="fieldset flex-1">
+                <label class="label text-xs">Header Right (optional)</label>
+                <input
+                  v-model="draft.header_right"
+                  type="text"
+                  class="input input-sm w-full"
+                  placeholder="e.g., pp. 12-14 or Level 2"
+                />
+              </fieldset>
+            </div>
 
-                <div class="grid gap-3 md:grid-cols-2">
-                  <div class="space-y-2">
-                    <p class="text-sm text-base-content/70">Preview</p>
-                    <CardPreview
-                      :collection="collection ?? undefined"
-                      :html="draft.front"
-                      side="front"
-                      :front-only="true"
-                      :scale="0.45"
-                    />
-                  </div>
-                  <fieldset class="fieldset">
-                    <label class="label text-sm">Header Right (optional)</label>
-                    <input
-                      v-model="draft.header_right"
-                      type="text"
-                      class="input"
-                      placeholder="e.g., pp. 12-14"
-                    />
-                    <p class="text-xs text-base-content/70 mt-1">
-                      Small hint shown on the card front.
-                    </p>
-                  </fieldset>
-                </div>
+            <!-- Editors: front | back -->
+            <div class="grid gap-3 md:grid-cols-2">
+              <div v-for="side in (['front', 'back'] as const)" :key="side" class="space-y-2">
+                <p class="text-sm font-semibold capitalize">{{ side }}</p>
+                <fieldset class="fieldset">
+                  <label class="label text-xs">Layout</label>
+                  <select
+                    class="select select-sm select-bordered w-full"
+                    :value="draft[side].layout"
+                    @change="setDraftLayout(draft, side, ($event.target as HTMLSelectElement).value as CardLayout)"
+                  >
+                    <option v-for="(label, key) in LAYOUT_LABELS" :key="key" :value="key">{{ label }}</option>
+                  </select>
+                </fieldset>
+                <fieldset
+                  v-for="sectionKey in LAYOUT_SECTIONS[draft[side].layout]"
+                  :key="side + '-' + sectionKey"
+                  class="fieldset"
+                >
+                  <label class="label text-xs capitalize">{{ sectionKey }}</label>
+                  <textarea
+                    v-model="draft[side].sections[sectionKey]"
+                    class="textarea textarea-bordered w-full font-mono"
+                    rows="3"
+                    :placeholder="`${sectionKey} content (markdown)...`"
+                  />
+                </fieldset>
+              </div>
+            </div>
+
+            <!-- Previews: front | back -->
+            <div class="grid gap-3 md:grid-cols-2">
+              <div v-for="side in (['front', 'back'] as const)" :key="'preview-' + side" class="space-y-1">
+                <p class="text-xs text-base-content/70 capitalize">{{ side }} Preview</p>
+                <CardPreview
+                  :sideData="draft[side]"
+                  :side="side"
+                  :collection="collection ?? undefined"
+                  :scale="0.45"
+                />
               </div>
             </div>
           </div>
