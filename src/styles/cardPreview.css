@@ -5,6 +5,7 @@
 .flashcard-preview-container {
   display: inline-flex;
   flex-direction: column;
+  position: relative;
   border: 1px solid #ddd;
   background: var(--background-color, #f0f0f0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -14,6 +15,17 @@
   font-family: var(--font-family, Arial, sans-serif);
   color: var(--font-color, #171717);
   line-height: 1.6;
+}
+
+.flashcard-watermark {
+  position: absolute;
+  bottom: calc(6px * var(--card-scale, 1));
+  right: calc(6px * var(--card-scale, 1));
+  height: calc(40px * var(--card-scale, 1));
+  width: auto;
+  opacity: 1;
+  pointer-events: none;
+  user-select: none;
 }
 
 .flashcard-preview-container,

@@ -153,6 +153,7 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
         </div>
       </template>
     </div>
+    <img class="flashcard-watermark" src="/logo.png" alt="" aria-hidden="true" />
   </div>
 </template>
 

@@ -1,5 +1,6 @@
 import cardContentCss from '../styles/cardContent.css?raw';
 import cardLayoutCss from '../styles/cardLayout.css?raw';
+import logoDataUrl from '../../public/logo.png?inline';
 import { markdownToHtml } from '../utils/markdownToHtml';
 import { hexToRgba, normalizeHexColor } from '../utils/color';
 import { getFontCSSValue, isSystemFont } from '../utils/fonts';
@@ -101,6 +102,7 @@ async function buildCardHtml(card: Flashcard, side: 'front' | 'back', collection
       <div class="flashcard-preview-content pdf-flashcard-content" style="color: ${fontColor}; font-family: ${fontFamily};">
         ${layoutHtml}
       </div>
+      <div class="pdf-watermark"></div>
     </div>
   `;
 }
@@ -131,7 +133,20 @@ function buildHeadHtml(collection: Collection, cardWidthMm: number, cardHeightMm
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        position: relative;
         background: var(--background-color, #fff);
+      }
+
+      .pdf-watermark {
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        height: 40px;
+        width: 160px;
+        background-image: url(${logoDataUrl});
+        background-size: auto 100%;
+        background-repeat: no-repeat;
+        background-position: right bottom;
       }
 
       .pdf-flashcard-header {
