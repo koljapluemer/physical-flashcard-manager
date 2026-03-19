@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, withDefaults } from 'vue';
-import { Download, Sparkles } from 'lucide-vue-next';
+import { Download, Sparkles, FileDown, FileUp } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { OpenAI } from 'openai';
 import CardPreview from './CardPreview.vue';
@@ -11,6 +11,8 @@ import type { CardLayout, CardSideData } from '../types';
 import { emptyCardSide, parseCardSide, serializeCardSide, LAYOUT_SECTIONS, LAYOUT_LABELS } from '../utils/cardSide';
 import { useSettingsStore } from '../stores/settings';
 import { useToastStore } from '../stores/toast';
+import { exportCardsToZip, importCardsFromZip } from '../utils/cardExport';
+import { downloadPdfBlob } from '../utils/pdfExport';
 
 const DEFAULT_PROMPT =
   'Generate concise Q&A flashcards that fit on small physical cards. Keep answers short and scannable. Prefer one concept per card. Use the attached material as a guideline, but do not copy verbatim from it. If math is included, render it as inline latex syntax. Set the header text to either "Level 1", "Level 2", or "Level 3", depending on the difficulty of the card.';
@@ -95,6 +97,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'download'): void;
   (e: 'created'): void;
+  (e: 'refreshed'): void;
 }>();
 
 const settingsStore = useSettingsStore();
@@ -148,9 +151,77 @@ watch(
   }
 );
 
+const zipExporting = ref(false);
+const zipImporting = ref(false);
+const zipImportInput = ref<HTMLInputElement | null>(null);
+
 function handleDownload() {
   if (!props.disabled) {
     emit('download');
+  }
+}
+
+async function handleZipExport() {
+  if (!props.collection || props.flashcards.length === 0) return;
+  zipExporting.value = true;
+  try {
+    const blob = await exportCardsToZip(props.flashcards);
+    const sanitized = props.collection.title
+      .replace(/[^a-z0-9]/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase();
+    downloadPdfBlob(blob, `${sanitized}-cards.zip`);
+  } catch (err) {
+    toastStore.push(err instanceof Error ? err.message : 'Export failed', 'error');
+  } finally {
+    zipExporting.value = false;
+  }
+}
+
+async function handleZipImport(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file || !props.collection) return;
+
+  zipImporting.value = true;
+  try {
+    const cards = await importCardsFromZip(file);
+    const existingIds = new Set(props.flashcards.map((c) => c.id));
+    let updated = 0;
+    let created = 0;
+
+    for (const card of cards) {
+      const front = JSON.stringify(card.front);
+      const back = JSON.stringify(card.back);
+      if (card.id && existingIds.has(card.id)) {
+        await flashcardsApi.updateFlashcard(card.id, {
+          front,
+          back,
+          header_right: card.header_right,
+          is_info_card: card.is_info_card,
+          is_favorite: card.is_favorite,
+          sort_order: card.sort_order,
+        });
+        updated++;
+      } else {
+        await flashcardsApi.createFlashcard({
+          collection: props.collection.id,
+          front,
+          back,
+          header_right: card.header_right,
+          is_info_card: card.is_info_card,
+        });
+        created++;
+      }
+    }
+
+    toastStore.push(`Imported ${cards.length} cards (${updated} updated, ${created} created)`, 'success');
+    emit('refreshed');
+  } catch (err) {
+    toastStore.push(err instanceof Error ? err.message : 'Import failed', 'error');
+  } finally {
+    zipImporting.value = false;
+    if (zipImportInput.value) zipImportInput.value.value = '';
   }
 }
 
@@ -421,6 +492,36 @@ async function saveSelected() {
             <span v-if="loading" class="loading loading-spinner loading-xs"></span>
           </span>
         </button>
+        <button
+          class="btn btn-outline gap-2"
+          type="button"
+          :disabled="!collection || flashcards.length === 0 || zipExporting"
+          @click="handleZipExport"
+        >
+          <FileDown :size="18" />
+          <span class="flex items-center gap-2">
+            <span>Export ZIP</span>
+            <span v-if="zipExporting" class="loading loading-spinner loading-xs"></span>
+          </span>
+        </button>
+        <label
+          class="btn btn-outline gap-2"
+          :class="{ 'btn-disabled': !collection || zipImporting }"
+        >
+          <FileUp :size="18" />
+          <span class="flex items-center gap-2">
+            <span>Import ZIP</span>
+            <span v-if="zipImporting" class="loading loading-spinner loading-xs"></span>
+          </span>
+          <input
+            ref="zipImportInput"
+            type="file"
+            accept=".zip"
+            class="hidden"
+            :disabled="!collection || zipImporting"
+            @change="handleZipImport"
+          />
+        </label>
         <button class="btn gap-2" type="button" :disabled="!collection" @click="openAiModal">
           <Sparkles :size="18" />
           <span>Generate with AI</span>

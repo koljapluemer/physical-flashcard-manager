@@ -306,6 +306,7 @@ function toggleCardInclude(cardId: number) {
         :loading="exportingPdf"
         @download="exportPdf"
         @created="loadData"
+        @refreshed="loadData"
       />
 
       <CollectionCollapsibleFlashcards
