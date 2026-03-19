@@ -89,14 +89,6 @@ async function loadContext() {
   }
 }
 
-function extractJson(text: string) {
-  const fenced = text.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);
-  if (fenced?.[1]) {
-    return fenced[1].trim();
-  }
-  return text.trim();
-}
-
 
 function buildMessages(prompt: string) {
   const contextPayload = {
@@ -128,14 +120,12 @@ function buildMessages(prompt: string) {
 
   const systemContent = [
     'You help edit flashcards for a physical flashcard app.',
-    'Always respond with JSON only, no Markdown fences.',
     'Each card side has a layout and sections. Preserve the existing layout unless the user asks to change it.',
-    'Schema: {"reply":"short chat reply","card":{"front":{"layout":"default","sections":{"main":"markdown"}},"back":{"layout":"default","sections":{"main":"markdown"}},"header_right":"optional"}}',
-    'Layout types and their section keys:',
-    '  "default": sections = {"main": "..."}',
-    '  "2-columns": sections = {"left": "...", "right": "..."}',
-    '  "top-row-2-columns": sections = {"top": "...", "left": "...", "right": "..."}',
-    '  "bottom-row-2-columns": sections = {"left": "...", "right": "...", "bottom": "..."}',
+    'Layout types and their active section keys (unused sections should be empty string):',
+    '  "default": main',
+    '  "2-columns": left, right',
+    '  "top-row-2-columns": top, left, right',
+    '  "bottom-row-2-columns": left, right, bottom',
     'Markdown format rules:',
     '- Use **bold**, *italic*, # headings, - bullets, 1. numbered lists',
     '- Math: use $E = mc^2$ for inline math (single dollar signs)',
@@ -177,10 +167,59 @@ async function sendMessage() {
   sending.value = true;
 
   try {
+    const cardSideSchema = {
+      type: 'object',
+      properties: {
+        layout: {
+          type: 'string',
+          enum: ['default', '2-columns', 'top-row-2-columns', 'bottom-row-2-columns'],
+        },
+        sections: {
+          type: 'object',
+          properties: {
+            main: { type: 'string' },
+            left: { type: 'string' },
+            right: { type: 'string' },
+            top: { type: 'string' },
+            bottom: { type: 'string' },
+          },
+          required: ['main', 'left', 'right', 'top', 'bottom'],
+          additionalProperties: false,
+        },
+      },
+      required: ['layout', 'sections'],
+      additionalProperties: false,
+    };
+
     const body = {
       model: 'gpt-4o-mini',
       messages: buildMessages(prompt),
       temperature: 0.6,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'chat_response',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              reply: { type: 'string' },
+              card: {
+                type: 'object',
+                properties: {
+                  front: cardSideSchema,
+                  back: cardSideSchema,
+                  header_right: { type: 'string' },
+                },
+                required: ['front', 'back', 'header_right'],
+                additionalProperties: false,
+              },
+            },
+            required: ['reply', 'card'],
+            additionalProperties: false,
+          },
+        },
+      },
     };
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -202,39 +241,16 @@ async function sendMessage() {
       throw new Error('No response from the model.');
     }
 
-    const parsedText = extractJson(content);
+    const parsed = JSON.parse(content) as AiResponse;
+    const replyText = parsed.reply || 'Proposed changes ready.';
 
-    let parsed: AiResponse | undefined;
-    let replyText: string;
     let card: ProposedCard | undefined;
-
-    try {
-      parsed = JSON.parse(parsedText) as AiResponse;
-      replyText = parsed.reply || 'Proposed changes ready.';
-
-      if (parsed.card?.front && parsed.card?.back) {
-        const front = parsed.card.front as CardSideData;
-        const back = parsed.card.back as CardSideData;
-        if (front.layout && front.sections && back.layout && back.sections) {
-          card = { front, back, header_right: parsed.card.header_right };
-        }
+    if (parsed.card?.front && parsed.card?.back) {
+      const front = parsed.card.front as CardSideData;
+      const back = parsed.card.back as CardSideData;
+      if (front.layout && front.sections && back.layout && back.sections) {
+        card = { front, back, header_right: parsed.card.header_right };
       }
-    } catch (jsonError) {
-      // JSON parsing failed - log details for debugging
-      console.error('JSON Parse Error:', jsonError);
-      console.error('Attempted to parse:', parsedText.substring(0, 500)); // Log first 500 chars
-      console.error('Full AI response:', content);
-
-      // Try to extract at least the reply text from the raw content
-      replyText = 'AI response could not be parsed. The AI may have included invalid characters in the JSON.';
-
-      // Show a helpful error to the user
-      toastStore.push(
-        'AI returned malformed JSON. Try rephrasing your request or asking for simpler content.',
-        'error'
-      );
-
-      card = undefined;
     }
 
     const assistantMessage: ChatMessage = {
