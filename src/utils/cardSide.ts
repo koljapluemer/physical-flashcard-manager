@@ -3,6 +3,7 @@ import type { CardLayout, CardSideData } from '../types';
 export const LAYOUT_SECTIONS: Record<CardLayout, string[]> = {
   'default': ['main'],
   '2-columns': ['left', 'right'],
+  '3-columns': ['left', 'center', 'right'],
   'top-row-2-columns': ['top', 'left', 'right'],
   'bottom-row-2-columns': ['left', 'right', 'bottom'],
 };
@@ -10,6 +11,7 @@ export const LAYOUT_SECTIONS: Record<CardLayout, string[]> = {
 export const LAYOUT_LABELS: Record<CardLayout, string> = {
   'default': 'Default (single column)',
   '2-columns': '2 Columns',
+  '3-columns': '3 Columns',
   'top-row-2-columns': 'Row on top, 2 columns below',
   'bottom-row-2-columns': '2 columns, row on bottom',
 };

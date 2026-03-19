@@ -77,7 +77,10 @@ async function loadContext() {
   contextLoading.value = true;
   try {
     const items = await flashcardsApi.getFlashcards(props.collection.id);
-    flashcardContext.value = items.slice(0, 8);
+    const favorites = items.filter((c) => c.is_favorite);
+    flashcardContext.value = favorites.length > 0
+      ? favorites
+      : items.sort(() => Math.random() - 0.5).slice(0, 3);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unable to load flashcards for context.';
     toastStore.push(message, 'warning');
@@ -110,7 +113,7 @@ function buildMessages(prompt: string) {
       back: props.backSide,
       header_right: props.headerRight,
     },
-    examples: flashcardContext.value.slice(0, 4).map((item) => ({
+    examples: flashcardContext.value.map((item) => ({
       id: item.id,
       front: parseCardSide(item.front),
       back: parseCardSide(item.back),

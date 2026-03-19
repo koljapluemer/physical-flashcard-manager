@@ -27,6 +27,14 @@ async function buildLayoutContentHtml(sideData: ReturnType<typeof parseCardSide>
     </div>`;
   }
 
+  if (layout === '3-columns') {
+    return `<div class="card-layout-3col">
+      <div class="card-col">${rendered.left ?? ''}</div>
+      <div class="card-col card-col-center">${rendered.center ?? ''}</div>
+      <div class="card-col card-col-right">${rendered.right ?? ''}</div>
+    </div>`;
+  }
+
   if (layout === 'top-row-2-columns') {
     return `<div class="card-layout-top2col">
       <div class="card-top-row">${rendered.top ?? ''}</div>

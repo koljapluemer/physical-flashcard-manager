@@ -1,4 +1,4 @@
-export type CardLayout = 'default' | '2-columns' | 'top-row-2-columns' | 'bottom-row-2-columns';
+export type CardLayout = 'default' | '2-columns' | '3-columns' | 'top-row-2-columns' | 'bottom-row-2-columns';
 
 export interface CardSideData {
   layout: CardLayout;
@@ -29,6 +29,7 @@ export interface Flashcard {
   back: string;
   header_right?: string;
   is_info_card?: boolean;
+  is_favorite?: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;

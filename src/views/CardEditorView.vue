@@ -235,7 +235,7 @@ Content here
               <legend class="fieldset-legend">Content</legend>
               <textarea
                 v-model="frontSide.sections.main"
-                class="textarea textarea-bordered w-full h-48 font-mono"
+                class="textarea textarea-bordered w-full h-72 font-mono"
                 placeholder="Enter markdown..."
               />
             </fieldset>
@@ -245,11 +245,28 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Left column..." />
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Right column..." />
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="frontSide.layout === '3-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Left column</legend>
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Center column</legend>
+                <textarea v-model="frontSide.sections.center" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Center column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Right column</legend>
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -257,16 +274,16 @@ Content here
           <template v-else-if="frontSide.layout === 'top-row-2-columns'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Top row</legend>
-              <textarea v-model="frontSide.sections.top" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Top row..." />
+              <textarea v-model="frontSide.sections.top" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Top row..." />
             </fieldset>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom left</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom left..." />
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom right</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom right..." />
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom right..." />
               </fieldset>
             </div>
           </template>
@@ -275,16 +292,16 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top left</legend>
-                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top left..." />
+                <textarea v-model="frontSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top right</legend>
-                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top right..." />
+                <textarea v-model="frontSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top right..." />
               </fieldset>
             </div>
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Bottom row</legend>
-              <textarea v-model="frontSide.sections.bottom" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Bottom row..." />
+              <textarea v-model="frontSide.sections.bottom" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Bottom row..." />
             </fieldset>
           </template>
         </div>
@@ -303,7 +320,7 @@ Content here
               <legend class="fieldset-legend">Content</legend>
               <textarea
                 v-model="backSide.sections.main"
-                class="textarea textarea-bordered w-full h-48 font-mono"
+                class="textarea textarea-bordered w-full h-72 font-mono"
                 placeholder="Enter markdown..."
               />
             </fieldset>
@@ -313,11 +330,28 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Left column</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Left column..." />
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Right column</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-40 font-mono" placeholder="Right column..." />
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
+              </fieldset>
+            </div>
+          </template>
+
+          <template v-else-if="backSide.layout === '3-columns'">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Left column</legend>
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Left column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Center column</legend>
+                <textarea v-model="backSide.sections.center" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Center column..." />
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend class="fieldset-legend">Right column</legend>
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-64 font-mono" placeholder="Right column..." />
               </fieldset>
             </div>
           </template>
@@ -325,16 +359,16 @@ Content here
           <template v-else-if="backSide.layout === 'top-row-2-columns'">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Top row</legend>
-              <textarea v-model="backSide.sections.top" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Top row..." />
+              <textarea v-model="backSide.sections.top" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Top row..." />
             </fieldset>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom left</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom left..." />
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Bottom right</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Bottom right..." />
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Bottom right..." />
               </fieldset>
             </div>
           </template>
@@ -343,16 +377,16 @@ Content here
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top left</legend>
-                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top left..." />
+                <textarea v-model="backSide.sections.left" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top left..." />
               </fieldset>
               <fieldset class="fieldset">
                 <legend class="fieldset-legend">Top right</legend>
-                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-32 font-mono" placeholder="Top right..." />
+                <textarea v-model="backSide.sections.right" class="textarea textarea-bordered w-full h-48 font-mono" placeholder="Top right..." />
               </fieldset>
             </div>
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Bottom row</legend>
-              <textarea v-model="backSide.sections.bottom" class="textarea textarea-bordered w-full h-24 font-mono" placeholder="Bottom row..." />
+              <textarea v-model="backSide.sections.bottom" class="textarea textarea-bordered w-full h-36 font-mono" placeholder="Bottom row..." />
             </fieldset>
           </template>
         </div>

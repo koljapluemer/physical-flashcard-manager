@@ -14,6 +14,7 @@ function mapFlashcard(row: FlashcardRow): Flashcard {
     back: row.back,
     header_right: row.header_right ?? undefined,
     is_info_card: row.is_info_card,
+    is_favorite: row.is_favorite,
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -98,13 +99,14 @@ export async function createFlashcard(data: {
 
 export async function updateFlashcard(
   id: number,
-  data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean; sort_order?: number }>
+  data: Partial<{ front: string; back: string; header_right?: string; is_info_card?: boolean; is_favorite?: boolean; sort_order?: number }>
 ): Promise<Flashcard> {
   const payload: FlashcardUpdate = {
     front: data.front,
     back: data.back,
     header_right: data.header_right ?? null,
     is_info_card: data.is_info_card,
+    is_favorite: data.is_favorite,
     sort_order: data.sort_order,
   };
 

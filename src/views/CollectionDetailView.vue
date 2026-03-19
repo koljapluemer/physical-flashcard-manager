@@ -96,6 +96,17 @@ function createCard() {
   openCard('new');
 }
 
+async function toggleFavorite(cardId: number) {
+  const card = cards.value.find((c) => c.id === cardId);
+  if (!card) return;
+  try {
+    await flashcardsApi.updateFlashcard(cardId, { is_favorite: !card.is_favorite });
+    await loadData();
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Failed to update favorite');
+  }
+}
+
 async function deleteCard(cardId: number) {
   if (window.confirm('Delete this flashcard?')) {
     try {
@@ -309,6 +320,7 @@ function toggleCardInclude(cardId: number) {
         @toggle-include="toggleCardInclude"
         @move-up="moveCardUp"
         @move-down="moveCardDown"
+        @toggle-favorite="toggleFavorite"
       />
 
       <CollectionCollapsibleDangerZone :loading="deletingCollection" @remove="removeCollection" />

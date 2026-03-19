@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, ChevronUp, Pencil, Star, Trash2 } from 'lucide-vue-next';
 import CardPreview from './CardPreview.vue';
 import type { Collection, Flashcard } from '../types';
 
@@ -21,6 +21,7 @@ const emit = defineEmits<{
   (e: 'toggleInclude', cardId: number): void;
   (e: 'moveUp', cardId: number): void;
   (e: 'moveDown', cardId: number): void;
+  (e: 'toggleFavorite', cardId: number): void;
 }>();
 
 function isIncluded(cardId: number): boolean {
@@ -129,6 +130,15 @@ function toggleInclude(cardId: number): void {
                       <ChevronDown :size="14" />
                     </button>
                   </div>
+                  <button
+                    class="btn btn-square btn-sm"
+                    :class="card.is_favorite ? 'btn-warning' : 'btn-ghost'"
+                    type="button"
+                    aria-label="Toggle favorite"
+                    @click="emit('toggleFavorite', card.id)"
+                  >
+                    <Star :size="16" :fill="card.is_favorite ? 'currentColor' : 'none'" />
+                  </button>
                   <button class="btn btn-square btn-sm" type="button" aria-label="Edit card"
                     @click="emit('edit', card.id)">
                     <Pencil :size="16" />

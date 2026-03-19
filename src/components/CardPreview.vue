@@ -122,6 +122,15 @@ const showHeader = computed(() => headerTextLeft.value || headerTextRight.value)
         </div>
       </template>
 
+      <!-- 3-columns -->
+      <template v-else-if="resolvedSideData.layout === '3-columns'">
+        <div class="card-layout-3col">
+          <div class="card-col" v-html="renderedSections.left ?? ''"></div>
+          <div class="card-col card-col-center" v-html="renderedSections.center ?? ''"></div>
+          <div class="card-col card-col-right" v-html="renderedSections.right ?? ''"></div>
+        </div>
+      </template>
+
       <!-- top-row-2-columns -->
       <template v-else-if="resolvedSideData.layout === 'top-row-2-columns'">
         <div class="card-layout-top2col">
