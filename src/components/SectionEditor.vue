@@ -4,7 +4,7 @@ import { Image as ImageIcon } from 'lucide-vue-next';
 import { uploadImage } from '../api/images';
 
 const props = defineProps<{
-  modelValue: string;
+  modelValue: string | undefined;
   collectionId: string;
   heightClass: string;
   placeholder?: string;
@@ -26,7 +26,8 @@ async function handleFile(e: Event) {
   if (!file) return;
 
   // Capture cursor position before await — user may lose focus during upload
-  const start = textareaEl.value?.selectionStart ?? props.modelValue.length;
+  const current = props.modelValue ?? '';
+  const start = textareaEl.value?.selectionStart ?? current.length;
   const end = textareaEl.value?.selectionEnd ?? start;
 
   uploading.value = true;
@@ -35,7 +36,7 @@ async function handleFile(e: Event) {
   try {
     const url = await uploadImage(file, props.collectionId);
     const snippet = `![image](${url})`;
-    const next = props.modelValue.slice(0, start) + snippet + props.modelValue.slice(end);
+    const next = current.slice(0, start) + snippet + current.slice(end);
     emit('update:modelValue', next);
 
     await nextTick();

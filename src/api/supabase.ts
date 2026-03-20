@@ -12,6 +12,7 @@ export type Database = {
           width_mm: string;
           height_mm: string;
           font_family: string;
+          font_size: string | null;
           header_color: string;
           background_color: string;
           font_color: string;
@@ -28,6 +29,7 @@ export type Database = {
           width_mm?: string;
           height_mm?: string;
           font_family?: string;
+          font_size?: string | null;
           header_color?: string;
           background_color?: string;
           font_color?: string;
@@ -44,6 +46,7 @@ export type Database = {
           width_mm?: string;
           height_mm?: string;
           font_family?: string;
+          font_size?: string | null;
           header_color?: string;
           background_color?: string;
           font_color?: string;

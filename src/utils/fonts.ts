@@ -101,7 +101,7 @@ export async function loadGoogleFontAsInlineCss(fontFamily: string): Promise<str
     return '';
   }
 
-  const uniqueUrls = [...new Set([...cssText.matchAll(/url\((https:\/\/[^)]+)\)/g)].map((m) => m[1]))];
+  const uniqueUrls = [...new Set([...cssText.matchAll(/url\((https:\/\/[^)]+)\)/g)].map((m) => m[1]))].filter((url): url is string => url !== undefined);
 
   const replacements = await Promise.all(
     uniqueUrls.map(async (url) => {
@@ -119,7 +119,7 @@ export async function loadGoogleFontAsInlineCss(fontFamily: string): Promise<str
 
   let result = cssText;
   for (const r of replacements) {
-    if (r) result = result.replaceAll(r.url, r.dataUrl);
+    if (r) result = result.split(r.url).join(r.dataUrl);
   }
   return result;
 }

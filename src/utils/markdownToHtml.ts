@@ -7,13 +7,14 @@ import remarkRehype from 'remark-rehype';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 import { visit } from 'unist-util-visit';
-import type { Root } from 'mdast';
+import type { Root, Image } from 'mdast';
+import type { ContainerDirective } from 'mdast-util-directive';
 
 function remarkBoxPlugin() {
   return (tree: Root) => {
-    visit(tree, 'containerDirective', (node: any) => {
+    visit(tree, 'containerDirective', (node: ContainerDirective) => {
       if (node.name === 'box') {
-        node.data = node.data || {};
+        node.data = node.data ?? {};
         node.data.hName = 'aside';
         node.data.hProperties = { class: 'flashcard-box' };
       }
@@ -24,7 +25,7 @@ function remarkBoxPlugin() {
 // Supports Obsidian-style image sizing: ![alt|W](url), ![alt|xH](url), ![alt|WxH](url)
 function remarkImageSize() {
   return (tree: Root) => {
-    visit(tree, 'image', (node: any) => {
+    visit(tree, 'image', (node: Image) => {
       const match = (node.alt ?? '').match(/^(.*?)\|(?:(\d+)x(\d+)|(\d+)|x(\d+))$/);
       if (!match) return;
       const [, alt, bw, bh, w, h] = match;
@@ -33,8 +34,8 @@ function remarkImageSize() {
       const parts: string[] = ['max-width:100%'];
       if (width) parts.push(`width:${width}px`);
       if (height) parts.push(`height:${height}px`);
-      node.alt = alt;
-      node.data = node.data || {};
+      node.alt = alt ?? null;
+      node.data = node.data ?? {};
       node.data.hProperties = { ...node.data.hProperties, style: parts.join(';') };
     });
   };

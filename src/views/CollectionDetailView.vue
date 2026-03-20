@@ -248,6 +248,7 @@ async function swapCardOrder(indexA: number, indexB: number) {
   const arr = [...cards.value];
   const cardA = arr[indexA];
   const cardB = arr[indexB];
+  if (!cardA || !cardB) return;
   const orderA = cardA.sort_order;
   const orderB = cardB.sort_order;
   arr[indexA] = { ...cardB, sort_order: orderA };

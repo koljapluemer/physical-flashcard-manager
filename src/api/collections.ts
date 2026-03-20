@@ -14,7 +14,7 @@ function mapCollection(row: CollectionRow): Collection {
     width_mm: row.width_mm,
     height_mm: row.height_mm,
     font_family: row.font_family,
-    font_size: (row as any).font_size ?? undefined,
+    font_size: row.font_size ?? undefined,
     header_color: row.header_color,
     background_color: row.background_color,
     font_color: row.font_color,

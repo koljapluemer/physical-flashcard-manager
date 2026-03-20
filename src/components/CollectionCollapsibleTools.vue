@@ -8,7 +8,7 @@ import * as materialsApi from '../api/materials';
 import * as flashcardsApi from '../api/flashcards';
 import type { Collection, Flashcard, Material } from '../types';
 import type { CardLayout, CardSideData } from '../types';
-import { emptyCardSide, parseCardSide, serializeCardSide, LAYOUT_SECTIONS, LAYOUT_LABELS } from '../utils/cardSide';
+import { parseCardSide, serializeCardSide, LAYOUT_SECTIONS, LAYOUT_LABELS } from '../utils/cardSide';
 import { useSettingsStore } from '../stores/settings';
 import { useToastStore } from '../stores/toast';
 import { exportCardsToZip, importCardsFromZip } from '../utils/cardExport';
