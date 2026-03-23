@@ -192,6 +192,12 @@ export async function exportCollectionToPdf(
 
   const headHtml = buildHeadHtml(collection, cardWidthMm, cardHeightMm);
   const rendererUrl = import.meta.env.VITE_RENDERER_URL;
+  console.log('[PDF] VITE_RENDERER_URL =', rendererUrl);
+
+  console.log('[PDF] Sending render request to', `${rendererUrl}/render`, {
+    pageCount: pages.length,
+    pageSize: [cardWidthMm, cardHeightMm],
+  });
 
   const response = await fetch(`${rendererUrl}/render`, {
     method: 'POST',
@@ -199,9 +205,19 @@ export async function exportCollectionToPdf(
     body: JSON.stringify({ pages, headHtml, pageSize: [cardWidthMm, cardHeightMm] }),
   });
 
+  console.log('[PDF] Renderer response:', response.status, response.statusText);
+
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: 'Failed to generate PDF' }));
-    throw new Error(err.error ?? 'Failed to generate PDF');
+    const rawText = await response.text().catch(() => '(could not read response body)');
+    console.error('[PDF] Renderer error response body:', rawText);
+    let errMsg = 'Failed to generate PDF';
+    try {
+      const err = JSON.parse(rawText);
+      errMsg = err.error ?? errMsg;
+    } catch {
+      if (rawText && rawText !== '(could not read response body)') errMsg = rawText;
+    }
+    throw new Error(errMsg);
   }
 
   return response.blob();
