@@ -430,7 +430,7 @@ pre {
 }
 
 .textarea {
-  min-height: 6rem;
+  min-height: 20rem;
   resize: vertical;
 }
 
