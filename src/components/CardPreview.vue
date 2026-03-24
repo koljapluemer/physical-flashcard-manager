@@ -99,7 +99,9 @@ const headerTextRight = computed(() =>
     ? props.flashcard?.header_right ?? (props.useDemoValues ? props.demoHeaderRight : '')
     : ''
 );
-const showHeader = computed(() => headerTextLeft.value || headerTextRight.value);
+const showHeader = computed(
+  () => headerTextLeft.value || headerTextRight.value || !!props.collection?.header_color
+);
 </script>
 
 <template>
