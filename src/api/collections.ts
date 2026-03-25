@@ -147,3 +147,53 @@ export async function deleteCollection(id: number): Promise<void> {
     throw new Error(error.message);
   }
 }
+
+export async function duplicateCollection(id: number): Promise<Collection> {
+  const original = await getCollection(id);
+
+  const newCollection = await createCollection({
+    title: `Copy of ${original.title}`,
+    description: original.description,
+    width_mm: original.width_mm ?? undefined,
+    height_mm: original.height_mm ?? undefined,
+    font_family: original.font_family ?? undefined,
+    font_size: original.font_size,
+    header_color: original.header_color ?? undefined,
+    background_color: original.background_color ?? undefined,
+    font_color: original.font_color ?? undefined,
+    header_font_color: original.header_font_color ?? undefined,
+    header_text_left: original.header_text_left,
+  });
+
+  const { data: flashcards, error: flashcardsError } = await supabase
+    .from('flashcards')
+    .select('*')
+    .eq('collection_id', id)
+    .order('sort_order', { ascending: true });
+
+  if (flashcardsError) {
+    throw new Error(flashcardsError.message);
+  }
+
+  type FlashcardRow = Database['public']['Tables']['flashcards']['Row'];
+
+  if (flashcards && flashcards.length > 0) {
+    const insertPayload = (flashcards as FlashcardRow[]).map((card) => ({
+      collection_id: newCollection.id,
+      front: card.front,
+      back: card.back,
+      header_right: card.header_right ?? null,
+      is_info_card: card.is_info_card,
+      is_favorite: card.is_favorite,
+      sort_order: card.sort_order,
+    }));
+
+    const { error: insertError } = await supabase.from('flashcards').insert(insertPayload);
+
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+  }
+
+  return newCollection;
+}

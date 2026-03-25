@@ -37,6 +37,7 @@ const modalState = reactive({
 });
 
 const hasCollections = computed(() => collections.value.length > 0);
+const duplicatingId = ref<number | null>(null);
 
 async function loadCollections() {
   loading.value = true;
@@ -117,6 +118,18 @@ async function handleCollectionSubmit(payload: {
   }
 }
 
+async function duplicateCollection(collection: Collection) {
+  duplicatingId.value = collection.id;
+  try {
+    await collectionsApi.duplicateCollection(collection.id);
+    await loadCollections();
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : 'Unable to duplicate collection');
+  } finally {
+    duplicatingId.value = null;
+  }
+}
+
 onMounted(() => {
   void loadCollections();
 });
@@ -148,6 +161,7 @@ onMounted(() => {
                 <th>Title</th>
                 <th>Format</th>
                 <th>Description</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -171,6 +185,17 @@ onMounted(() => {
                 </td>
                 <td class="align-top text-sm text-base-content/80">
                   {{ collection.description || '—' }}
+                </td>
+                <td class="align-top">
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    type="button"
+                    :disabled="duplicatingId === collection.id"
+                    @click="duplicateCollection(collection)"
+                  >
+                    <span v-if="duplicatingId === collection.id" class="loading loading-spinner loading-xs"></span>
+                    <span v-else>Duplicate</span>
+                  </button>
                 </td>
               </tr>
             </tbody>
